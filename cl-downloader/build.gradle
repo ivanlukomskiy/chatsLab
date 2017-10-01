@@ -1,0 +1,13 @@
+dependencies {
+    compile project(":cl-core")
+    compile("com.vk.api:sdk:0.3.7")
+    compile group: 'org.zeroturnaround', name: 'zt-zip', version: '1.12'
+    compile group: 'org.codehaus.jackson', name: 'jackson-mapper-asl', version: '1.9.13'
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'com.ivanlukomskiy.chatsLab.gui.MainFrame'
+    }
+    from configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+}

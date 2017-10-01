@@ -1,0 +1,7 @@
+.git/*
+.idea/*
+.gradle/*
+auth.data
+cl-core/build/*
+cl-downloader/build/*
+downloads/*
