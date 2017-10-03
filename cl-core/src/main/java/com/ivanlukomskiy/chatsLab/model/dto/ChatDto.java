@@ -16,4 +16,5 @@ public class ChatDto {
     private int id;
     private String name;
     private Date downloadTime;
+    private Integer adminId;
 }

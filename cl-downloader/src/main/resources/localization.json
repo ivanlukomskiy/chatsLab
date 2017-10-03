@@ -1,0 +1,120 @@
+{
+  "welcome": {
+    "token_saved": {
+      "text": {
+        "ru": "<html>Привет!<br>Токен доступа к Вконтакте сохранён на диске с прошлого раза<br>Попробовать использовать его или создать новый?",
+        "en": "<html>Hi!<br>Your VK access token is stored on disk.<br>Would you like to use it or create a new one?"
+      },
+      "use_saved": {
+        "ru": "Использовать токен из файла",
+        "en": "Try to use token saved on disk"
+      },
+      "create_new": {
+        "ru": "Создать новый токен",
+        "en": "Create new one"
+      }
+    },
+    "first_boot": {
+      "text": {
+        "ru": "<html>Привет!<br>Чтобы получить возможность скачивать чаты из Вконтакте, требуется временно разрешить приложению доступ к вашему акканту.<br>Для этого нажмите кнопу \"Открыть ссылку в браузере\" и откройте доступ для приложения \"VkMessagesFetching\".<br>Чтобы программа могла скачивать чаты, нужно скопировать код пользователя из адресной строки, это текст, идущий после \"https://oauth.vk.com/blank.html#code=\" и скопировать в поле внизу этого окна, после чего нажать \"Далее\"<br>",
+        "en": "<html> Hi!<br> Before you will select chats which needs to be download, let's do authentication and get your VK API access token.<br> Open the link below and give permissions to \"VkMessagesFetching\" application.<br> Then copy the text after \"code=\" in the URL to the field below and press \"Next Step\""
+      },
+      "next": {
+        "ru": "Далее",
+        "en": "Next Step"
+      },
+      "save_to_disk": {
+        "ru": "Сохранить токен на диск",
+        "en": "Save token to disk"
+      },
+      "user_code": {
+        "ru": "Код пользователя",
+        "en": "User code"
+      },
+      "open_link": {
+        "ru": "Открыть ссылку в браузере",
+        "en": "Open link in browser"
+      }
+    }
+  },
+  "authentication": {
+    "started": {
+      "ru": "Аутентификация...",
+      "en": "Authentication..."
+    },
+    "success": {
+      "ru": "Аутентификация прошла успешно. Загружаем диалоги...",
+      "en": "Authentication successful. Loading dialogues disk..."
+    },
+    "try_again": {
+      "ru": "Попробовать ещё раз",
+      "en": "Try again"
+    },
+    "error": {
+      "ru": "<html>Не удалось аутентифицироваться :(<br>Ошибка: {}",
+      "en": "<html>Failed to authenticate :(<br>Error is: {}"
+    }
+  },
+  "downloading_started": {
+    "ru": "Загрузка запущена...",
+    "en": "Downloading started..."
+  },
+  "downloading_failed": {
+    "ru": "<html>Не удалось загрузить файлы<br>Ошибка: {}",
+    "en": "<html>Failed to download dialogues<br>Error: {}"
+  },
+  "failed_to_load_dialogues": {
+    "ru": "Не удалось загрузить список диалогов",
+    "en": "Failed to load dialogues list"
+  },
+  "download_window": {
+    "text": {
+      "ru": "Выберите чаты для скачивания",
+      "en": "Select chats to download"
+    },
+    "download": {
+      "ru": "Скачать",
+      "en": "Download"
+    },
+    "chat_name": {
+      "ru": "Название чата",
+      "en": "Chat name"
+    }
+  },
+  "downloading": {
+    "chat": {
+      "ru": "Скачивается чат {}",
+      "en": "Downloading chat {}"
+    },
+    "chat_detailed": {
+      "ru": "Скачивается чат {} ({}/{})",
+      "en": "Downloading chat {} ({}/{})"
+    },
+    "users": {
+      "ru": "Скачиваются имена участников чатов {}/{}",
+      "en": "Downloading chat participants names {}/{}"
+    },
+    "packaging": {
+      "ru": "Архивирование...",
+      "en": "Packaging..."
+    }
+  },
+  "finished": {
+    "text": {
+      "ru": "<html>Все выбранные сообщения скачаны!<br>Спасибо за участие ;)",
+      "en": "<html>All selected chats are downloaded!<br>Thanks for participating ;)"
+    },
+    "open_folder": {
+      "ru": "Открыть папку с архивом",
+      "en": "Open downloads folder"
+    },
+    "back": {
+      "ru": "Назад к списку чатов",
+      "en": "Back to chats list"
+    }
+  },
+  "unknown_error": {
+    "ru": "<html>Что-то сломалось :(<br>Ошибка: {}<br>Свяжитесь с Ваней",
+    "en": "<html>Something broken :(<br>Error: {}<br>Contact to Ivan please"
+  }
+}

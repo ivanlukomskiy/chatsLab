@@ -16,6 +16,7 @@ import org.codehaus.jackson.util.DefaultPrettyPrinter;
 import org.zeroturnaround.zip.ZipUtil;
 
 import java.io.File;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
@@ -36,6 +37,14 @@ public class JsonDumper implements Dumper {
 
     private static final File DOWNLOADS_TEMP = DOWNLOADS_FOLDER.toPath().resolve("temp").toFile();
     private File archiveFile;
+
+    @Override
+    public void prepare() {
+        try {
+            FileUtils.deleteDirectory(DOWNLOADS_TEMP);
+        } catch (IOException e) {
+        }
+    }
 
     @Override
     @SneakyThrows
@@ -76,7 +85,7 @@ public class JsonDumper implements Dumper {
     @SneakyThrows
     public void writeUsers(Map<Integer, UserDto> users) {
         MAPPER.enable(INDENT_OUTPUT);
-        MAPPER.writeValue(DOWNLOADS_TEMP.toPath().resolve("users.json").toFile(), users);
+        MAPPER.writeValue(DOWNLOADS_TEMP.toPath().resolve("users.json").toFile(), users.values());
     }
 
     @Override

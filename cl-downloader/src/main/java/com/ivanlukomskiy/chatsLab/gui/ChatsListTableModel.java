@@ -1,20 +1,23 @@
 package com.ivanlukomskiy.chatsLab.gui;
 
 import com.ivanlukomskiy.chatsLab.model.ChatGuiDto;
-import lombok.AllArgsConstructor;
 
 import javax.swing.table.AbstractTableModel;
-import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
+
+import static com.ivanlukomskiy.chatsLab.util.LocalizationHolder.localization;
 
 /**
  * @author ivan_l
  */
-@AllArgsConstructor
 public class ChatsListTableModel extends AbstractTableModel {
 
-    private final static String[] columnNames = {"", "Name"};
+    public ChatsListTableModel(List<ChatGuiDto> data) {
+        this.data = data;
+        columnNames = new String[]{"", localization.getText("download_window.chat_name")};
+    }
+
+    private String[] columnNames;
 
     private final List<ChatGuiDto> data;
 

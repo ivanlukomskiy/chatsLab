@@ -7,12 +7,14 @@ import lombok.Data;
  */
 @Data
 public class ChatGuiDto {
-    public ChatGuiDto(int id, String name) {
+    public ChatGuiDto(int id, String name, Integer adminId) {
         this.id = id;
         this.name = name;
+        this.adminId = adminId;
     }
 
     final int id;
     final String name;
+    final Integer adminId;
     boolean download = false;
 }

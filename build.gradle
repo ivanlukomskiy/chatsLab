@@ -14,6 +14,7 @@ allprojects {
     dependencies {
         apply plugin: 'application'
         compileOnly("org.projectlombok:lombok:1.16.18")
+        compile group: 'log4j', name: 'log4j', version: '1.2.16'
         compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.7'
         testCompile('junit:junit:4.12')
     }

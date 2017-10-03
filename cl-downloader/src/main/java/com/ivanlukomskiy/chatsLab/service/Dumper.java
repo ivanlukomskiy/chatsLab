@@ -10,6 +10,7 @@ import java.util.Map;
  * Created by ivanl <ilukomskiy@sbdagroup.com> on 30.09.2017.
  */
 public interface Dumper {
+    void prepare();
     void startWriting(ChatDto chat);
     void writeMessage(MessageDto message);
     void finishWriting();

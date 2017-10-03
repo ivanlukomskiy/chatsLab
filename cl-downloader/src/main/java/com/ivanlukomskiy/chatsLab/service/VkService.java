@@ -28,6 +28,7 @@ import java.net.URISyntaxException;
 import java.util.*;
 
 import static com.ivanlukomskiy.chatsLab.service.IOService.INSTANCE;
+import static com.ivanlukomskiy.chatsLab.util.LocalizationHolder.localization;
 
 /**
  * @author ivan_l
@@ -41,6 +42,8 @@ public class VkService {
     private static final String PERMISSIONS = "messages";
     private static final String TARGET_URI = "https://oauth.vk.com/authorize";
     private static final String REDIRECT_URI = "https://oauth.vk.com/blank.html";
+    private static final int RETRY_DELAY = 5;
+    private static final int MAX_RETRIES = 10;
 
     private static final int RECORDS_PER_PAGE_MAX = 200;
     private static final int MAX_USERS_PER_REQUEST = 100;
@@ -52,7 +55,7 @@ public class VkService {
         return new UserActor(INSTANCE.getId(), INSTANCE.getPassword());
     }
 
-    public List<ChatGuiDto> loadDialogues() throws ApiException, ClientException, InterruptedException {
+    public List<ChatGuiDto> loadDialogues() throws ClientException, InterruptedException, ApiException {
 
         TransportClient transportClient = HttpTransportClient.getInstance();
         VkApiClient vk = new VkApiClient(transportClient);
@@ -67,12 +70,7 @@ public class VkService {
 
             logger.debug("Loading dialogues, page " + page);
 
-            List<Dialog> dialogues = vk.messages()
-                    .getDialogs(actor)
-                    .count(RECORDS_PER_PAGE_MAX)
-                    .offset(RECORDS_PER_PAGE_MAX * page)
-                    .execute()
-                    .getItems();
+            List<Dialog> dialogues = requestMessages(vk, page, actor);
 
             for (Dialog dialog : dialogues) {
                 Message message = dialog.getMessage();
@@ -80,7 +78,7 @@ public class VkService {
                 if (message.getChatId() == null) {
                     continue;
                 }
-                chats.add(new ChatGuiDto(message.getChatId(), message.getTitle()));
+                chats.add(new ChatGuiDto(message.getChatId(), message.getTitle(), dialog.getMessage().getAdminId()));
             }
 
             long timeToSleep = MIN_REQUESTS_DELAY - System.currentTimeMillis() + requestSentTime;
@@ -96,9 +94,39 @@ public class VkService {
         return chats;
     }
 
+    private List<Dialog> requestMessages(VkApiClient vk, int page, UserActor actor)
+            throws ClientException, ApiException {
+
+        return requestMessages(vk, page, actor, 0);
+    }
+
+    private List<Dialog> requestMessages(VkApiClient vk, int page, UserActor actor, int retries)
+            throws ClientException, ApiException {
+
+        try {
+            return vk.messages()
+                    .getDialogs(actor)
+                    .count(RECORDS_PER_PAGE_MAX)
+                    .offset(RECORDS_PER_PAGE_MAX * page)
+                    .execute()
+                    .getItems();
+        } catch (ApiException e) {
+            if (retries >= MAX_RETRIES) {
+                throw e;
+            }
+            logger.error("API request failed. Will retry in {} seconds", RETRY_DELAY);
+            try {
+                Thread.sleep(RETRY_DELAY * 1000);
+            } catch (InterruptedException ie) {
+            }
+            return requestMessages(vk, page, actor, retries + 1);
+        }
+    }
+
     private Map<Integer, UserDto> idToName = new HashMap<>();
 
-    private Map<Integer, UserDto> getUsersById(Set<Integer> ids, VkApiClient vk, DownloadingStatusListener listener)
+    private Map<Integer, UserDto> getUsersById(Set<Integer> ids, VkApiClient vk,
+                                               DownloadingStatusListener listener)
             throws ClientException, ApiException, InterruptedException {
 
         logger.debug("Requested {} users", ids.size());
@@ -121,16 +149,12 @@ public class VkService {
             index++;
 
             if (index % MAX_USERS_PER_REQUEST == 0 || index == notResolved.size()) {
-                listener.changeText("Writing user details (" + index + "/" + notResolved.size() + ")");
-                logger.debug("Writing user details {}/{}",index,notResolved.size());
+                listener.changeText(localization.getText("downloading.users", index, notResolved.size()));
+                logger.debug("Writing user details {}/{}", index, notResolved.size());
 
                 long requestSentTime = System.currentTimeMillis();
 
-                List<UserXtrCounters> users = vk
-                        .users()
-                        .get()
-                        .userIds(idQuery)
-                        .execute();
+                List<UserXtrCounters> users = getUsers(idQuery, vk);
 
                 for (UserXtrCounters user : users) {
                     UserDto dto = new UserDto();
@@ -151,10 +175,36 @@ public class VkService {
         return idToName;
     }
 
+    private List<UserXtrCounters> getUsers(List<String> idQuery, VkApiClient vk) throws ClientException, ApiException {
+        return getUsers(idQuery, vk, 0);
+    }
+
+    private List<UserXtrCounters> getUsers(List<String> idQuery, VkApiClient vk, int retries)
+            throws ClientException, ApiException {
+        try {
+            return vk
+                    .users()
+                    .get()
+                    .userIds(idQuery)
+                    .execute();
+        } catch (ApiException e) {
+            if (retries >= MAX_RETRIES) {
+                throw e;
+            }
+            logger.error("API request failed. Will retry in {} seconds", RETRY_DELAY);
+            try {
+                Thread.sleep(RETRY_DELAY * 1000);
+            } catch (InterruptedException ie) {
+            }
+            return getUsers(idQuery, vk, retries + 1);
+        }
+    }
+
     public void downloadMessages(List<ChatGuiDto> chats, DownloadingStatusListener listener)
-            throws ApiException, ClientException, IOException, InterruptedException {
+            throws InterruptedException, ClientException, ApiException {
 
         logger.info("Writing session started");
+        dumper.prepare();
 
         TransportClient transportClient = HttpTransportClient.getInstance();
         VkApiClient vk = new VkApiClient(transportClient);
@@ -166,12 +216,13 @@ public class VkService {
                 continue;
             }
 
-            listener.changeText("Downloading chat " + chat.getName());
+            listener.changeText(localization.getText("downloading.chat", chat.getName()));
 
             ChatDto chatDto = new ChatDto();
             chatDto.setName(chat.getName());
             chatDto.setId(chat.getId());
             chatDto.setDownloadTime(new Date());
+            chatDto.setAdminId(chat.getAdminId());
 
             dumper.startWriting(chatDto);
 
@@ -183,7 +234,7 @@ public class VkService {
                         .count(RECORDS_PER_PAGE_MAX)
                         .offset(page * RECORDS_PER_PAGE_MAX);
                 query.peerId(2000000000 + chat.getId());
-                GetHistoryResponse response = query.execute();
+                GetHistoryResponse response = getMessages(query);
                 List<Message> messages = response.getItems();
                 for (Message message : messages) {
                     MessageDto messageDto = new MessageDto(message.getId(), message.getFromId(), message.getDate(),
@@ -193,8 +244,8 @@ public class VkService {
                         userIds.add(message.getFromId());
                     }
                 }
-                listener.changeText("Downloading chat " + chat.getName() + "<br>(" + page * RECORDS_PER_PAGE_MAX
-                        + "/" + response.getCount() + ")");
+                listener.changeText(localization.getText("downloading.chat_detailed",
+                        chat.getName(), page * RECORDS_PER_PAGE_MAX, response.getCount()));
                 long timeToSleep = MIN_REQUESTS_DELAY - System.currentTimeMillis() + requestSentTime;
                 if (timeToSleep > 0) {
                     Thread.sleep(timeToSleep);
@@ -211,25 +262,65 @@ public class VkService {
         Map<Integer, UserDto> usersById = getUsersById(userIds, vk, listener);
         dumper.writeUsers(usersById);
 
-        listener.changeText("Packaging");
+        listener.changeText(localization.getText("downloading.packaging"));
         logger.info("Packaging");
         dumper.finalize();
         logger.info("Writing session finished");
     }
 
+    private GetHistoryResponse getMessages(MessagesGetHistoryQuery query) throws ClientException, ApiException {
+        return getMessages(query, 0);
+    }
+
+    public GetHistoryResponse getMessages(MessagesGetHistoryQuery query, int retries) throws ClientException,
+            ApiException {
+
+        try {
+            return query.execute();
+        } catch (ApiException e) {
+            if (retries >= MAX_RETRIES) {
+                throw e;
+            }
+            logger.error("API request failed. Will retry in {} seconds", RETRY_DELAY);
+            try {
+                Thread.sleep(RETRY_DELAY * 1000);
+            } catch (InterruptedException ie) {
+            }
+            return getMessages(query, retries + 1);
+        }
+    }
+
     public void requestAuthToken(String code, boolean saveToFile)
             throws ApiException, ClientException, IOException {
 
-        TransportClient transportClient = HttpTransportClient.getInstance();
-        VkApiClient vk = new VkApiClient(transportClient);
+        requestAuthToken(code, saveToFile, 0);
+    }
 
-        UserAuthResponse authResponse = vk.oauth()
-                .userAuthorizationCodeFlow(APP_ID, CLIENT_SECRET,
-                        "https://oauth.vk.com/blank.html", code)
-                .execute();
-        INSTANCE.setCredentials(new Credentials(authResponse.getUserId(), authResponse.getAccessToken()));
-        if (saveToFile) {
-            INSTANCE.serialize();
+    public void requestAuthToken(String code, boolean saveToFile, int retries)
+            throws ClientException, ApiException, IOException {
+
+        try {
+            TransportClient transportClient = HttpTransportClient.getInstance();
+            VkApiClient vk = new VkApiClient(transportClient);
+
+            UserAuthResponse authResponse = vk.oauth()
+                    .userAuthorizationCodeFlow(APP_ID, CLIENT_SECRET,
+                            "https://oauth.vk.com/blank.html", code)
+                    .execute();
+            INSTANCE.setCredentials(new Credentials(authResponse.getUserId(), authResponse.getAccessToken()));
+            if (saveToFile) {
+                INSTANCE.serialize();
+            }
+        } catch (Exception e) {
+            if (retries >= MAX_RETRIES) {
+                throw e;
+            }
+            logger.error("API request failed. Will retry in {} seconds", RETRY_DELAY);
+            try {
+                Thread.sleep(RETRY_DELAY * 1000);
+            } catch (InterruptedException ie) {
+            }
+            requestAuthToken(code, saveToFile, retries + 1);
         }
     }
 
