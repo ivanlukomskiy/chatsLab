@@ -5,3 +5,4 @@ auth.data
 cl-core/build/*
 cl-downloader/build/*
 downloads/*
+logs.txt
