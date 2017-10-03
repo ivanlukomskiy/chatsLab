@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 
 /**
+ * Overall chat info
  * Created by ivanl <ilukomskiy@sbdagroup.com> on 30.09.2017.
  */
 @Data

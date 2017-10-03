@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.util.List;
 
 import static com.ivanlukomskiy.chatsLab.service.IOService.INSTANCE;
+import static com.ivanlukomskiy.chatsLab.util.LocalizationHolder.LOCALIZATION_RESOURCE;
 import static com.ivanlukomskiy.chatsLab.util.LocalizationHolder.localization;
 import static java.awt.EventQueue.invokeLater;
 import static javax.swing.GroupLayout.Alignment.*;
@@ -30,6 +31,7 @@ import static javax.swing.UIManager.getInstalledLookAndFeels;
 import static javax.swing.UIManager.setLookAndFeel;
 
 /**
+ * Downloader GUI
  * @author ivan_l
  */
 public class MainFrame extends javax.swing.JFrame implements DownloadingStatusListener {
@@ -42,7 +44,7 @@ public class MainFrame extends javax.swing.JFrame implements DownloadingStatusLi
     public static void main(String args[]) {
         for (String arg : args) {
             if ("-locale=en".equals(arg)) {
-                LocalizationHolder.localization = new Localization("localization.json", "en");
+                LocalizationHolder.localization = new Localization(LOCALIZATION_RESOURCE, "en");
                 break;
             }
         }

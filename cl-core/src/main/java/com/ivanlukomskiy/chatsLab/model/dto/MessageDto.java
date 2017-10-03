@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 
 /**
+ * Message details
  * Created by ivanl <ilukomskiy@sbdagroup.com> on 30.09.2017.
  */
 @Data

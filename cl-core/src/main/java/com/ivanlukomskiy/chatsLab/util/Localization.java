@@ -6,13 +6,13 @@ import com.ivanlukomskiy.chatsLab.exception.LocalizationPlaceholderException;
 import lombok.SneakyThrows;
 import org.codehaus.jackson.JsonNode;
 
-import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
 import static com.ivanlukomskiy.chatsLab.util.JacksonUtils.OBJECT_MAPPER;
 
 /**
+ * Provides methods to get text with current locale
  * Created by ivanl <ilukomskiy@sbdagroup.com> on 04.10.2017.
  */
 

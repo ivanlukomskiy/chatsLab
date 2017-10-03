@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
+ * Represents data needs to be sent to VK API in order to authenticate
  * Created by ivanl <ilukomskiy@sbdagroup.com> on 30.09.2017.
  */
 @Data

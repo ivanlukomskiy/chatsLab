@@ -31,6 +31,7 @@ import static com.ivanlukomskiy.chatsLab.service.IOService.INSTANCE;
 import static com.ivanlukomskiy.chatsLab.util.LocalizationHolder.localization;
 
 /**
+ * Provides methods to access VK API and download messages
  * @author ivan_l
  */
 public class VkService {

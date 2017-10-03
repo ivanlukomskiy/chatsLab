@@ -7,6 +7,7 @@ import com.ivanlukomskiy.chatsLab.model.dto.UserDto;
 import java.util.Map;
 
 /**
+ * Provides methods to dump messages to disk
  * Created by ivanl <ilukomskiy@sbdagroup.com> on 30.09.2017.
  */
 public interface Dumper {

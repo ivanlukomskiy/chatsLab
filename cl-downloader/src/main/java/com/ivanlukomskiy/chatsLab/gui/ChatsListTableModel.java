@@ -8,6 +8,7 @@ import java.util.List;
 import static com.ivanlukomskiy.chatsLab.util.LocalizationHolder.localization;
 
 /**
+ * Model of chats download table
  * @author ivan_l
  */
 public class ChatsListTableModel extends AbstractTableModel {

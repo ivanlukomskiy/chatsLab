@@ -11,26 +11,23 @@ import org.apache.logging.log4j.Logger;
 import org.codehaus.jackson.JsonEncoding;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.util.DefaultPrettyPrinter;
 import org.zeroturnaround.zip.ZipUtil;
 
 import java.io.File;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Map;
 
 import static com.ivanlukomskiy.chatsLab.service.IOService.DOWNLOADS_FOLDER;
+import static com.ivanlukomskiy.chatsLab.util.JacksonUtils.OBJECT_MAPPER;
 import static org.codehaus.jackson.map.SerializationConfig.Feature.INDENT_OUTPUT;
 
 /**
+ * Dumps messages to files in JSON format; performs zip packaging
  * Created by ivanl <ilukomskiy@sbdagroup.com> on 01.10.2017.
  */
 public class JsonDumper implements Dumper {
     private static final Logger logger = LogManager.getLogger(VkService.class);
-
-    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private JsonFactory factory = new JsonFactory();
     private JsonGenerator generator = null;
@@ -59,7 +56,7 @@ public class JsonDumper implements Dumper {
 
         generator = factory.createJsonGenerator(currentFile, JsonEncoding.UTF8)
                 .setPrettyPrinter(new DefaultPrettyPrinter())
-                .setCodec(MAPPER);
+                .setCodec(OBJECT_MAPPER);
         generator.writeStartObject();
         generator.writeFieldName("details");
         generator.writeObject(chat);
@@ -84,8 +81,8 @@ public class JsonDumper implements Dumper {
     @Override
     @SneakyThrows
     public void writeUsers(Map<Integer, UserDto> users) {
-        MAPPER.enable(INDENT_OUTPUT);
-        MAPPER.writeValue(DOWNLOADS_TEMP.toPath().resolve("users.json").toFile(), users.values());
+        OBJECT_MAPPER.enable(INDENT_OUTPUT);
+        OBJECT_MAPPER.writeValue(DOWNLOADS_TEMP.toPath().resolve("users.json").toFile(), users.values());
     }
 
     @Override
