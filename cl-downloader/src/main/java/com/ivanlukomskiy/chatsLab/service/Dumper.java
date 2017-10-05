@@ -1,8 +1,8 @@
 package com.ivanlukomskiy.chatsLab.service;
 
-import com.ivanlukomskiy.chatsLab.model.dto.ChatDto;
-import com.ivanlukomskiy.chatsLab.model.dto.MessageDto;
-import com.ivanlukomskiy.chatsLab.model.dto.UserDto;
+import com.ivanlukomskiy.chatsLab.model.pack.ChatDto;
+import com.ivanlukomskiy.chatsLab.model.pack.MessageDto;
+import com.ivanlukomskiy.chatsLab.model.pack.UserDto;
 
 import java.util.Map;
 
@@ -16,5 +16,6 @@ public interface Dumper {
     void writeMessage(MessageDto message);
     void finishWriting();
     void writeUsers(Map<Integer, UserDto> users);
+    void writeMetaInfo(int providerId);
     void finalize();
 }

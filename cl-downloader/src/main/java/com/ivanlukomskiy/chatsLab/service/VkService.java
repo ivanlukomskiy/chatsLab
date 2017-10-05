@@ -3,9 +3,9 @@ package com.ivanlukomskiy.chatsLab.service;
 import com.ivanlukomskiy.chatsLab.gui.DownloadingStatusListener;
 import com.ivanlukomskiy.chatsLab.model.ChatGuiDto;
 import com.ivanlukomskiy.chatsLab.model.Credentials;
-import com.ivanlukomskiy.chatsLab.model.dto.ChatDto;
-import com.ivanlukomskiy.chatsLab.model.dto.MessageDto;
-import com.ivanlukomskiy.chatsLab.model.dto.UserDto;
+import com.ivanlukomskiy.chatsLab.model.pack.ChatDto;
+import com.ivanlukomskiy.chatsLab.model.pack.MessageDto;
+import com.ivanlukomskiy.chatsLab.model.pack.UserDto;
 import com.vk.api.sdk.client.TransportClient;
 import com.vk.api.sdk.client.VkApiClient;
 import com.vk.api.sdk.client.actors.UserActor;
@@ -222,7 +222,6 @@ public class VkService {
             ChatDto chatDto = new ChatDto();
             chatDto.setName(chat.getName());
             chatDto.setId(chat.getId());
-            chatDto.setDownloadTime(new Date());
             chatDto.setAdminId(chat.getAdminId());
 
             dumper.startWriting(chatDto);
@@ -260,8 +259,12 @@ public class VkService {
             chat.setDownload(false);
         }
         logger.info("Messages writing finished. Starting to write users");
+        userIds.add(actor.getId());
         Map<Integer, UserDto> usersById = getUsersById(userIds, vk, listener);
         dumper.writeUsers(usersById);
+
+        logger.info("Users writing finished. Starting to write meta info");
+        dumper.writeMetaInfo(actor.getId());
 
         listener.changeText(localization.getText("downloading.packaging"));
         logger.info("Packaging");

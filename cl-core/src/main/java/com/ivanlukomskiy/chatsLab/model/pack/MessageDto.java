@@ -1,4 +1,4 @@
-package com.ivanlukomskiy.chatsLab.model.dto;
+package com.ivanlukomskiy.chatsLab.model.pack;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

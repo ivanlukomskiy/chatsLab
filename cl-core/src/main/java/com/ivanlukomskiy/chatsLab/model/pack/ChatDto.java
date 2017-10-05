@@ -1,10 +1,8 @@
-package com.ivanlukomskiy.chatsLab.model.dto;
+package com.ivanlukomskiy.chatsLab.model.pack;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.util.Date;
 
 /**
  * Overall chat info
@@ -16,6 +14,5 @@ import java.util.Date;
 public class ChatDto {
     private int id;
     private String name;
-    private Date downloadTime;
     private Integer adminId;
 }
