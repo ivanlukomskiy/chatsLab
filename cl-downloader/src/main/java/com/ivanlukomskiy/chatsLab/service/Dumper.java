@@ -1,8 +1,8 @@
 package com.ivanlukomskiy.chatsLab.service;
 
-import com.ivanlukomskiy.chatsLab.model.pack.ChatDto;
-import com.ivanlukomskiy.chatsLab.model.pack.MessageDto;
-import com.ivanlukomskiy.chatsLab.model.pack.UserDto;
+import com.ivanlukomskiy.chatsLab.model.ChatDto;
+import com.ivanlukomskiy.chatsLab.model.MessageDto;
+import com.ivanlukomskiy.chatsLab.model.UserDto;
 
 import java.util.Map;
 

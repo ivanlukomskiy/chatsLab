@@ -1,11 +1,7 @@
 package com.ivanlukomskiy.chatsLab.service;
 
 import com.ivanlukomskiy.chatsLab.gui.DownloadingStatusListener;
-import com.ivanlukomskiy.chatsLab.model.ChatGuiDto;
-import com.ivanlukomskiy.chatsLab.model.Credentials;
-import com.ivanlukomskiy.chatsLab.model.pack.ChatDto;
-import com.ivanlukomskiy.chatsLab.model.pack.MessageDto;
-import com.ivanlukomskiy.chatsLab.model.pack.UserDto;
+import com.ivanlukomskiy.chatsLab.model.*;
 import com.vk.api.sdk.client.TransportClient;
 import com.vk.api.sdk.client.VkApiClient;
 import com.vk.api.sdk.client.actors.UserActor;

@@ -1,0 +1,10 @@
+chats-lab:
+  sources-dir: C:\Users\ivanl\Dropbox\Чатики\New
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/chatsLab
+    username: postgres
+    password:
+  jpa:
+    generate-ddl: true

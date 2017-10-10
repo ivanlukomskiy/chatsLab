@@ -1,10 +1,10 @@
 package com.ivanlukomskiy.chatsLab.service;
 
 import com.google.common.io.Resources;
-import com.ivanlukomskiy.chatsLab.model.pack.ChatDto;
-import com.ivanlukomskiy.chatsLab.model.pack.MessageDto;
-import com.ivanlukomskiy.chatsLab.model.pack.MetaDto;
-import com.ivanlukomskiy.chatsLab.model.pack.UserDto;
+import com.ivanlukomskiy.chatsLab.model.ChatDto;
+import com.ivanlukomskiy.chatsLab.model.MessageDto;
+import com.ivanlukomskiy.chatsLab.model.MetaDto;
+import com.ivanlukomskiy.chatsLab.model.UserDto;
 import lombok.SneakyThrows;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;

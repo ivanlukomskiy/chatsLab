@@ -1,5 +1,6 @@
 package com.ivanlukomskiy.chatsLab.util;
 
+import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.map.ObjectMapper;
 
 /**
@@ -8,4 +9,5 @@ import org.codehaus.jackson.map.ObjectMapper;
  */
 public class JacksonUtils {
     public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    public static final JsonFactory JSON_FACTORY = new JsonFactory();
 }

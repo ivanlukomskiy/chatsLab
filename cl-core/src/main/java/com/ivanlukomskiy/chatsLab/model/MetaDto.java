@@ -1,4 +1,4 @@
-package com.ivanlukomskiy.chatsLab.model.pack;
+package com.ivanlukomskiy.chatsLab.model;
 
 import lombok.Data;
 

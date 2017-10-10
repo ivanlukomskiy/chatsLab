@@ -1,7 +1,8 @@
-package com.ivanlukomskiy.chatsLab.model.pack;
+package com.ivanlukomskiy.chatsLab.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * Message details
@@ -9,6 +10,7 @@ import lombok.Data;
  */
 @Data
 @AllArgsConstructor
+@NoArgsConstructor
 public class MessageDto {
     public long id;
     public int author;
