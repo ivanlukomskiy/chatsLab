@@ -21,18 +21,33 @@ public interface ChatRepository extends JpaRepository<Chat, Integer> {
     @Modifying
     @Query(value = "UPDATE cl_messages " +
             "SET chat_id = :target_id " +
+            "WHERE id NOT IN (" +
+            "  SELECT m1.id" +
+            "  FROM cl_messages m1" +
+            "    JOIN cl_messages m2 ON m1.time = m2.time" +
+            "  WHERE m1.chat_id = :source_id AND m2.chat_id = :target_id" +
+            "        AND m1.sender_id = m2.sender_id)", nativeQuery = true)
+    int mergeChats(@Param("source_id") int sourceId, @Param("target_id") int targetId);
+
+    @Modifying
+    @Query(value = "DELETE FROM cl_messages " +
+            "WHERE chat_id = :chat_id", nativeQuery = true)
+    int clearChatMessages(@Param("chat_id") int chatId);
+
+    @Modifying
+    @Query(value = "DELETE FROM cl_messages " +
             "WHERE id IN (" +
             "  SELECT m1.id" +
             "  FROM cl_messages m1" +
             "    JOIN cl_messages m2 ON m1.time = m2.time" +
             "  WHERE m1.chat_id = :source_id AND m2.chat_id = :target_id" +
             "        AND m1.sender_id = m2.sender_id)", nativeQuery = true)
-    void mergeChats(@Param("source_id") int sourceId, @Param("target_id") int targetId);
+    int cropChat(@Param("source_id") int sourceId, @Param("target_id") int targetId);
 
     @Modifying
-    @Query(value = "DELETE FROM cl_messages " +
-            "WHERE chat_id = :chat_id", nativeQuery = true)
-    void clearChatMessages(@Param("chat_id") int chatId);
+    @Query(value = "UPDATE cl_messages SET chat_id=:target_id WHERE chat_id=:source_id",
+            nativeQuery = true)
+    int move(@Param("source_id") int sourceId, @Param("target_id") int targetId);
 
     @Modifying
     @Query(value = "update cl_chats cc set messages_number = " +

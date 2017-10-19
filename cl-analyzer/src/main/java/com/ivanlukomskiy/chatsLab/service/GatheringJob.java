@@ -10,8 +10,12 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.List;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Created by ivanl <ilukomskiy@sbdagroup.com> on 07.10.2017.
@@ -31,7 +35,7 @@ public class GatheringJob implements Job {
     @SneakyThrows
     public void run() {
         logger.info("Import process started with sources dir \"{}\"", sourcesDir);
-        Files.list(Paths.get(sourcesDir))
+        List<Path> packs = Files.list(Paths.get(sourcesDir))
                 .filter(path -> MESSAGES_PACK_PATTERN.matcher(path.getFileName().toString()).matches())
                 .filter(path -> {
                     if (!gatheringService.isLoaded(path)) {
@@ -41,7 +45,9 @@ public class GatheringJob implements Job {
                         logger.debug("Package {} is already loaded", path.getFileName());
                         return false;
                     }
-                }).forEach(gatheringService::loadPack);
+                }).collect(Collectors.toList());
+        packs.sort(Collections.reverseOrder());
+        packs.forEach(gatheringService::loadPack);
     }
 
     @Override

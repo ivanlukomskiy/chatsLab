@@ -22,7 +22,7 @@ public class Chat {
     @ManyToOne
     @JoinColumn(name = "admin_id", nullable = false)
     private User admin;
-    @Column(name = "update_table", nullable = false)
+    @Column(name = "update_time", nullable = false)
     private Date updateTime;
     @Column(name = "messages_number", nullable = false)
     private int messagesCount;

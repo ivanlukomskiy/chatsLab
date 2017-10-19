@@ -1,5 +1,6 @@
 chats-lab:
   sources-dir: C:\Users\ivanl\Dropbox\Чатики\New
+  output-dir: F:\chatsLab\
 
 spring:
   datasource:

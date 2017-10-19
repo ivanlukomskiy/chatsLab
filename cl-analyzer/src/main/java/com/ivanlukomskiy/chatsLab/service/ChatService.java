@@ -11,6 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -23,6 +25,7 @@ import java.util.stream.Collectors;
 @Service
 public class ChatService {
     private static final Logger logger = LogManager.getLogger(ChatService.class);
+    private NumberFormat PERCENT_FORMAT = NumberFormat.getPercentInstance();
 
     @Autowired
     private ChatRepository chatRepository;
@@ -46,13 +49,13 @@ public class ChatService {
             chatNamesWithDuplicates.add((String) obj[0]);
         }
 
-        if(chatNamesWithDuplicates.size() == 0) {
+        if (chatNamesWithDuplicates.size() == 0) {
             logger.info("No duplicates found, nothing to merge");
             return;
         } else {
-            logger.info("{} chats with duplicates found",chatNamesWithDuplicates.size());
+            logger.info("{} chats with duplicates found", chatNamesWithDuplicates.size());
         }
-        int currentChat=0;
+        int currentChat = 0;
         for (String chatName : chatNamesWithDuplicates) {
             currentChat++;
             logger.info("Merging chat {}/{} with names {}", currentChat, chatNamesWithDuplicates.size(),
@@ -70,8 +73,9 @@ public class ChatService {
         transactionTemplate.execute(new TransactionCallbackWithoutResult() {
             @Override
             protected void doInTransactionWithoutResult(TransactionStatus status) {
-                chatRepository.mergeChats(sourceId, targetId);
-                chatRepository.clearChatMessages(sourceId);
+
+                Integer cropped = chatRepository.cropChat(sourceId, targetId);
+                Integer moved = chatRepository.move(sourceId, targetId);
                 chatRepository.updateChatMessagesNumber(targetId);
                 chatRepository.updateChatWordsNumber(targetId);
 
@@ -80,10 +84,12 @@ public class ChatService {
                 target.getPacks().addAll(source.getPacks());
                 target.setUpdateTime(new Date());
                 chatRepository.save(target);
-
                 chatRepository.delete(sourceId);
+
+                logger.debug("Merge finished; increment: {}, cropped: {}, moved: {}",
+                        PERCENT_FORMAT.format((moved.doubleValue()) / (cropped + moved))
+                        , cropped, moved);
             }
         });
-        logger.debug("Merge finished");
     }
 }

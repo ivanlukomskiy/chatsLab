@@ -10,7 +10,8 @@ import java.util.Date;
  */
 @Data
 @Entity
-@Table(name = "cl_messages")
+@Table(name = "cl_messages",
+        indexes = @Index(name = "cl_messages_index", columnList = "sender_id,time,chat_id"))
 public class Message {
     @Id
     @GeneratedValue
