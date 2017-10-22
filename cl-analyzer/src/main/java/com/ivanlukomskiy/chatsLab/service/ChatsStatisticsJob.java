@@ -1,10 +1,6 @@
-package com.ivanlukomskiy.chatsLab.service.job;
+package com.ivanlukomskiy.chatsLab.service;
 
 import com.ivanlukomskiy.chatsLab.model.dto.ChatNameToWords;
-import com.ivanlukomskiy.chatsLab.service.ClWriter;
-import com.ivanlukomskiy.chatsLab.service.ExportPathHolder;
-import com.ivanlukomskiy.chatsLab.service.Job;
-import com.ivanlukomskiy.chatsLab.service.dataAccess.MessagesService;
 import lombok.SneakyThrows;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

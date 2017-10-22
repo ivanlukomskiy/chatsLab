@@ -1,7 +1,5 @@
-package com.ivanlukomskiy.chatsLab.service.job;
+package com.ivanlukomskiy.chatsLab.service;
 
-import com.ivanlukomskiy.chatsLab.service.GatheringService;
-import com.ivanlukomskiy.chatsLab.service.Job;
 import lombok.SneakyThrows;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

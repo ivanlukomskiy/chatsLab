@@ -3,10 +3,6 @@ package com.ivanlukomskiy.chatsLab.service;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.UnmodifiableIterator;
 import com.ivanlukomskiy.chatsLab.model.*;
-import com.ivanlukomskiy.chatsLab.service.dataAccess.ChatService;
-import com.ivanlukomskiy.chatsLab.service.dataAccess.MessagesService;
-import com.ivanlukomskiy.chatsLab.service.dataAccess.PacksService;
-import com.ivanlukomskiy.chatsLab.service.dataAccess.UserService;
 import lombok.SneakyThrows;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -16,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.EntityManager;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.*;
@@ -53,12 +48,10 @@ public class GatheringService {
     private ChatService chatService;
 
     private ExecutorService executorService;
-    @Autowired
-    private EntityManager entityManager;
 
     @Transactional
     @SneakyThrows
-    public void loadPack(Path path) {
+    void loadPack(Path path) {
         ZipFile zipFile = new ZipFile(path.toFile());
         ZipEntry metaFileEntry = zipFile.getEntry(META_FILE_NAME);
         if (metaFileEntry == null) {
@@ -164,10 +157,6 @@ public class GatheringService {
             return 0;
         }
         return content.split("[\\.,;\\s\\?\\!]+").length;
-    }
-
-    public static void main(String[] args) {
-        System.out.println(Arrays.toString(("2.2".split("[.]+"))));
     }
 
     @SneakyThrows

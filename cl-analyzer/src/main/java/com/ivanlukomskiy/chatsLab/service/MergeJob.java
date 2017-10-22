@@ -1,7 +1,5 @@
-package com.ivanlukomskiy.chatsLab.service.job;
+package com.ivanlukomskiy.chatsLab.service;
 
-import com.ivanlukomskiy.chatsLab.service.dataAccess.ChatService;
-import com.ivanlukomskiy.chatsLab.service.Job;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

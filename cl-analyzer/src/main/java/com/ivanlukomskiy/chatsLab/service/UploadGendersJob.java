@@ -1,9 +1,6 @@
-package com.ivanlukomskiy.chatsLab.service.job;
+package com.ivanlukomskiy.chatsLab.service;
 
 import com.ivanlukomskiy.chatsLab.model.Gender;
-import com.ivanlukomskiy.chatsLab.service.GenderResolver;
-import com.ivanlukomskiy.chatsLab.service.Job;
-import com.ivanlukomskiy.chatsLab.service.dataAccess.UserService;
 import lombok.SneakyThrows;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

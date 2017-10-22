@@ -1,4 +1,4 @@
-package com.ivanlukomskiy.chatsLab.service.dataAccess;
+package com.ivanlukomskiy.chatsLab.service;
 
 import com.ivanlukomskiy.chatsLab.model.Pack;
 import com.ivanlukomskiy.chatsLab.repository.PacksRepository;

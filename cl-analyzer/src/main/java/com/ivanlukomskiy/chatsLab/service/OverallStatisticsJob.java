@@ -1,11 +1,7 @@
-package com.ivanlukomskiy.chatsLab.service.job;
+package com.ivanlukomskiy.chatsLab.service;
 
 import com.ivanlukomskiy.chatsLab.model.dto.DateToWords;
 import com.ivanlukomskiy.chatsLab.model.json.PointOnTime;
-import com.ivanlukomskiy.chatsLab.service.ClWriter;
-import com.ivanlukomskiy.chatsLab.service.ExportPathHolder;
-import com.ivanlukomskiy.chatsLab.service.Job;
-import com.ivanlukomskiy.chatsLab.service.dataAccess.MessagesService;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import org.apache.commons.lang.time.DateUtils;

@@ -1,9 +1,8 @@
-package com.ivanlukomskiy.chatsLab.service.dataAccess;
+package com.ivanlukomskiy.chatsLab.service;
 
 import com.ivanlukomskiy.chatsLab.model.Gender;
 import com.ivanlukomskiy.chatsLab.model.User;
 import com.ivanlukomskiy.chatsLab.model.dto.DateToWords;
-import com.ivanlukomskiy.chatsLab.model.dto.UserToWords;
 import com.ivanlukomskiy.chatsLab.repository.UserRepository;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

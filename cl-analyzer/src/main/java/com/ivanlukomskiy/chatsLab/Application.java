@@ -1,6 +1,6 @@
 package com.ivanlukomskiy.chatsLab;
 
-import com.ivanlukomskiy.chatsLab.service.job.GatheringJob;
+import com.ivanlukomskiy.chatsLab.service.GatheringJob;
 import com.ivanlukomskiy.chatsLab.service.Job;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
