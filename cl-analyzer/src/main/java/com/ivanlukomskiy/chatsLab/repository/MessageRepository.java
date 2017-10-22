@@ -38,6 +38,11 @@ public interface MessageRepository extends JpaRepository<Message, Integer> {
             "FROM cl_messages mes GROUP BY date_formatted order by date_formatted", nativeQuery = true)
     List<Object[]> getWordsByYears();
 
+    @Query(value = "SELECT to_char(mes.time, 'yyyy-mm-dd') as date_formatted, sum(mes.words_number) " +
+            "FROM cl_messages mes WHERE mes.time >= :start AND mes.time < :end " +
+            " GROUP BY date_formatted order by date_formatted", nativeQuery = true)
+    List<Object[]> getWordsByDays(@Param("start") Date start, @Param("end") Date end);
+
     @Query(value = "SELECT to_char(mes.time, 'yyyy-mm') as date_formatted, sum(mes.words_number) " +
             "FROM cl_messages mes GROUP BY date_formatted order by date_formatted", nativeQuery = true)
     List<Object[]> getWordsByMonths();
@@ -75,7 +80,7 @@ public interface MessageRepository extends JpaRepository<Message, Integer> {
     List<Object[]> getWordsByChats(@Param("start") Date start, @Param("end") Date end);
 
     @Query(value = "SELECT" +
-            "  usr.id, usr.first_name, usr.last_name," +
+            "  usr.id, usr.first_name, usr.last_name, usr.gender," +
             "  groupped.wcnt,groupped.mcnt" +
             " FROM cl_users usr" +
             "  JOIN (SELECT" +
@@ -89,7 +94,7 @@ public interface MessageRepository extends JpaRepository<Message, Integer> {
     List<Object[]> getWordsBySender();
 
     @Query(value = "SELECT" +
-            "  usr.id, usr.first_name, usr.last_name," +
+            "  usr.id, usr.first_name, usr.last_name, usr.gender, " +
             "  groupped.wcnt,groupped.mcnt" +
             " FROM cl_users usr" +
             "  JOIN (SELECT" +
@@ -103,4 +108,9 @@ public interface MessageRepository extends JpaRepository<Message, Integer> {
             "    ON groupped.id = usr.id " +
             "ORDER BY groupped.wcnt DESC", nativeQuery = true)
     List<Object[]> getWordsBySender(@Param("start") Date start, @Param("end") Date end);
+
+//    @Query(value = "SELECT to_char(mes.time, 'yyyy') as date_formatted, sum(mes.words_number) " +
+//            "FROM cl_messages mes WHERE mes.sender_id = :userId" +
+//            " GROUP BY date_formatted order by date_formatted", nativeQuery = true)
+//    List<Object[]> getWordsByYearsAndUser(@Param("user_id") int userId);
 }

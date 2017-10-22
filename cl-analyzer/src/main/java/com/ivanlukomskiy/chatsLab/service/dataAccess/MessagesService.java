@@ -1,4 +1,4 @@
-package com.ivanlukomskiy.chatsLab.service;
+package com.ivanlukomskiy.chatsLab.service.dataAccess;
 
 import com.ivanlukomskiy.chatsLab.model.Message;
 import com.ivanlukomskiy.chatsLab.model.User;
@@ -13,6 +13,8 @@ import org.springframework.stereotype.Service;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  * Created by ivanl <ilukomskiy@sbdagroup.com> on 09.10.2017.
@@ -58,17 +60,27 @@ public class MessagesService {
     public List<DateToWords> getWordsByYears() {
         return messageRepository.getWordsByYears().stream()
                 .map(DateToWords::new)
-                .collect(Collectors.toList());
+                .collect(toList());
+    }
+
+    public List<DateToWords> getWordsByDatsLastYear() {
+        Date last = messageRepository.getMaxDate();
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(last);
+        cal.roll(Calendar.YEAR, -1);
+        Date minusYear = cal.getTime();
+        return messageRepository.getWordsByDays(minusYear, last)
+                .stream().map(DateToWords::new).collect(toList());
     }
 
     public List<DateToWords> getWordsByMonths() {
         return messageRepository.getWordsByMonths().stream()
                 .map(DateToWords::new)
-                .collect(Collectors.toList());
+                .collect(toList());
     }
 
     public List<ChatNameToWords> getWordsByChats() {
-        return messageRepository.getWordsByChats().stream().map(ChatNameToWords::new).collect(Collectors.toList());
+        return messageRepository.getWordsByChats().stream().map(ChatNameToWords::new).collect(toList());
     }
 
     public List<ChatNameToWords> getWordsByChatLastYear() {
@@ -79,11 +91,11 @@ public class MessagesService {
         Date minusYear = cal.getTime();
         return messageRepository.getWordsByChats(minusYear, last).stream()
                 .map(ChatNameToWords::new)
-                .filter(cntw -> cntw.getWords() != 0).collect(Collectors.toList());
+                .filter(cntw -> cntw.getWords() != 0).collect(toList());
     }
 
     public List<UserToWords> getWordsByUser() {
-        return messageRepository.getWordsBySender().stream().map(UserToWords::new).collect(Collectors.toList());
+        return messageRepository.getWordsBySender().stream().map(UserToWords::new).collect(toList());
     }
 
     public List<UserToWords> getWordsByUserLastYear() {
@@ -93,7 +105,7 @@ public class MessagesService {
         cal.roll(Calendar.YEAR, -1);
         Date minusYear = cal.getTime();
         return messageRepository.getWordsBySender(minusYear, last).stream()
-                .map(UserToWords::new).collect(Collectors.toList());
+                .map(UserToWords::new).collect(toList());
     }
 
     public Map<Integer, List<UserToWords>> getWordsByUserAndYears() {
@@ -101,7 +113,7 @@ public class MessagesService {
         Date last = messageRepository.getMaxDate();
 
         Calendar pointer = Calendar.getInstance();
-        pointer.setTime(DateUtils.ceiling(first, Calendar.YEAR));
+        pointer.setTime(DateUtils.truncate(first, Calendar.YEAR));
 
         Map<Integer, List<UserToWords>> result = new HashMap<>();
 
@@ -114,7 +126,7 @@ public class MessagesService {
             List<UserToWords> users = messageRepository.getWordsBySender(left, right)
                     .stream()
                     .map(UserToWords::new)
-                    .collect(Collectors.toList());
+                    .collect(toList());
 
             result.put(year, users);
         }

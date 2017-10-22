@@ -12,8 +12,10 @@ import com.vk.api.sdk.objects.UserAuthResponse;
 import com.vk.api.sdk.objects.messages.Dialog;
 import com.vk.api.sdk.objects.messages.Message;
 import com.vk.api.sdk.objects.messages.responses.GetHistoryResponse;
+import com.vk.api.sdk.objects.stats.Sex;
 import com.vk.api.sdk.objects.users.UserXtrCounters;
 import com.vk.api.sdk.queries.messages.MessagesGetHistoryQuery;
+import com.vk.api.sdk.queries.users.UserField;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -23,22 +25,26 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
 
+import static com.ivanlukomskiy.chatsLab.model.Gender.FEMALE;
+import static com.ivanlukomskiy.chatsLab.model.Gender.MALE;
+import static com.ivanlukomskiy.chatsLab.model.Gender.UNKNOWN;
 import static com.ivanlukomskiy.chatsLab.service.IOService.INSTANCE;
 import static com.ivanlukomskiy.chatsLab.util.LocalizationHolder.localization;
 
 /**
  * Provides methods to access VK API and download messages
+ *
  * @author ivan_l
  */
 public class VkService {
 
     private static final Logger logger = LogManager.getLogger(VkService.class);
 
-    private static final int APP_ID = 5778688;
-    private static final String CLIENT_SECRET = "H9iRE6A6SwrNxylFnFoC";
-    private static final String PERMISSIONS = "messages";
-    private static final String TARGET_URI = "https://oauth.vk.com/authorize";
-    private static final String REDIRECT_URI = "https://oauth.vk.com/blank.html";
+    public static final int APP_ID = 5778688;
+    public static final String CLIENT_SECRET = "H9iRE6A6SwrNxylFnFoC";
+    public static final String PERMISSIONS = "messages";
+    public static final String TARGET_URI = "https://oauth.vk.com/authorize";
+    public static final String REDIRECT_URI = "https://oauth.vk.com/blank.html";
     private static final int RETRY_DELAY = 5;
     private static final int MAX_RETRIES = 10;
 
@@ -122,8 +128,8 @@ public class VkService {
 
     private Map<Integer, UserDto> idToName = new HashMap<>();
 
-    private Map<Integer, UserDto> getUsersById(Set<Integer> ids, VkApiClient vk,
-                                               DownloadingStatusListener listener)
+    public Map<Integer, UserDto> getUsersById(Set<Integer> ids, VkApiClient vk,
+                                              DownloadingStatusListener listener)
             throws ClientException, ApiException, InterruptedException {
 
         logger.debug("Requested {} users", ids.size());
@@ -158,6 +164,7 @@ public class VkService {
                     dto.setId(user.getId());
                     dto.setFirstName(user.getFirstName());
                     dto.setLastName(user.getLastName());
+                    dto.setGender(getGenderBySex(user.getSex()));
                     idToName.put(user.getId(), dto);
                 }
 
@@ -172,7 +179,17 @@ public class VkService {
         return idToName;
     }
 
-    private List<UserXtrCounters> getUsers(List<String> idQuery, VkApiClient vk) throws ClientException, ApiException {
+    public static Gender getGenderBySex(Integer sex) {
+        if (sex == 1) {
+            return FEMALE;
+        } else if (sex == 2) {
+            return MALE;
+        } else {
+            return UNKNOWN;
+        }
+    }
+
+    public List<UserXtrCounters> getUsers(List<String> idQuery, VkApiClient vk) throws ClientException, ApiException {
         return getUsers(idQuery, vk, 0);
     }
 
@@ -183,6 +200,7 @@ public class VkService {
                     .users()
                     .get()
                     .userIds(idQuery)
+                    .fields(UserField.SEX)
                     .execute();
         } catch (ApiException e) {
             if (retries >= MAX_RETRIES) {
@@ -324,7 +342,7 @@ public class VkService {
         }
     }
 
-    public URI getAuthUri() {
+    public static URI getAuthUri() {
         try {
             URIBuilder ub = new URIBuilder(TARGET_URI);
             ub.addParameter("client_id", String.valueOf(APP_ID));

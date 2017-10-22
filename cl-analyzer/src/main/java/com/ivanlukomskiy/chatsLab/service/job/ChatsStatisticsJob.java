@@ -1,6 +1,10 @@
-package com.ivanlukomskiy.chatsLab.service;
+package com.ivanlukomskiy.chatsLab.service.job;
 
 import com.ivanlukomskiy.chatsLab.model.dto.ChatNameToWords;
+import com.ivanlukomskiy.chatsLab.service.ClWriter;
+import com.ivanlukomskiy.chatsLab.service.ExportPathHolder;
+import com.ivanlukomskiy.chatsLab.service.Job;
+import com.ivanlukomskiy.chatsLab.service.dataAccess.MessagesService;
 import lombok.SneakyThrows;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -16,7 +20,7 @@ import static java.io.File.separator;
  * Created by ivanl <ilukomskiy@sbdagroup.com> on 19.10.2017.
  */
 @Component
-public class ChatsStatisticsJob implements Job{
+public class ChatsStatisticsJob implements Job {
     private static final Logger logger = LogManager.getLogger(ChatsStatisticsJob.class);
 
     private static final String WORDS_BY_CHATS = "words_by_chats.txt";

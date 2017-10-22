@@ -3,6 +3,7 @@ package com.ivanlukomskiy.chatsLab.model;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.codehaus.jackson.annotate.JsonIgnore;
 
 /**
  * User details
@@ -15,4 +16,5 @@ public class UserDto {
     private Integer id;
     private String firstName;
     private String lastName;
+    private Gender gender;
 }

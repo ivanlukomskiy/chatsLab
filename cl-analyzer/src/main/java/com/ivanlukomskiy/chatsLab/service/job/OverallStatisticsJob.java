@@ -1,18 +1,24 @@
-package com.ivanlukomskiy.chatsLab.service;
+package com.ivanlukomskiy.chatsLab.service.job;
 
 import com.ivanlukomskiy.chatsLab.model.dto.DateToWords;
+import com.ivanlukomskiy.chatsLab.model.json.PointOnTime;
+import com.ivanlukomskiy.chatsLab.service.ClWriter;
+import com.ivanlukomskiy.chatsLab.service.ExportPathHolder;
+import com.ivanlukomskiy.chatsLab.service.Job;
+import com.ivanlukomskiy.chatsLab.service.dataAccess.MessagesService;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
-import java.io.IOException;
 import java.text.DateFormatSymbols;
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -33,8 +39,12 @@ public class OverallStatisticsJob implements Job {
     private static final String BY_YEARS = "words_by_years.csv";
     private static final String MONTHS_ACTIVITY = "months_activity.csv";
     private static final String BY_MONTHS = "words_by_months.csv";
+    private static final String BY_MONTHS_JSON = "words_by_months.json";
+    private static final String BY_DAYS = "words_by_days_last_year.json";
 
-    private static final DecimalFormat FORMAT_PROPORTIONS = new DecimalFormat("#.##");
+    private static final DecimalFormat FORMAT_PROPORTIONS = new DecimalFormat("#.##",
+            new DecimalFormatSymbols(Locale.US));
+    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
 
     @Autowired
     private ExportPathHolder exportPathHolder;
@@ -53,11 +63,19 @@ public class OverallStatisticsJob implements Job {
         File byYearsFile = new File(exportDir + separator + BY_YEARS);
         File monthsActivityFile = new File(exportDir + separator + MONTHS_ACTIVITY);
         File byMonthsFile = new File(exportDir + separator + BY_MONTHS);
+        File byMonthsJsonFile = new File(exportDir + separator + BY_MONTHS_JSON);
+        File byDaysLastYear = new File(exportDir + separator + BY_DAYS);
 
         logger.info("Writing words by years...");
         List<DateToWords> wordsByYears = messagesService.getWordsByYears();
         try (ClWriter writer = new ClWriter(byYearsFile)) {
             wordsByYears.forEach(date -> writer.write(date.getFormattedDate(), date.getWords()));
+        }
+
+        logger.info("Writing words by days activity last year...");
+        List<DateToWords> wordsByDaysLastYear = messagesService.getWordsByDatsLastYear();
+        try (ClWriter writer = new ClWriter(byDaysLastYear)) {
+            wordsByDaysLastYear.forEach(date -> writer.write(date.getFormattedDate(), date.getWords()));
         }
 
         List<DateToWords> wordsByMonths = messagesService.getWordsByMonths();
@@ -91,14 +109,19 @@ public class OverallStatisticsJob implements Job {
             List<Map.Entry<Integer, Double>> pairs = new ArrayList<>(monthsActivityProportion.entrySet());
             pairs.sort(Comparator.comparing(Map.Entry::getKey));
             pairs.forEach(entry -> writer.write(monthNames[entry.getKey()].substring(0, 3),
-                    FORMAT_PROPORTIONS.format(entry.getValue() * 100)+"%"));
+                    FORMAT_PROPORTIONS.format(entry.getValue() * 100) + "%"));
         }
 
         logger.info("Writing words by months...");
+        List<PointOnTime> actual = new ArrayList<>();
+        List<PointOnTime> prediction = new ArrayList<>();
         int wordsLastSixMonths = 0;
-        long lastYearWordsEquality = 0;
+        long lastYearWordsEquality;
         try (ClWriter writer = new ClWriter(byMonthsFile)) {
-            wordsByMonths.forEach(date -> writer.write(date.getFormattedDate(), date.getWords(), "accurate"));
+            wordsByMonths.forEach(date -> {
+                writer.write(date.getFormattedDate(), date.getWords(), "accurate");
+                actual.add(new PointOnTime(toDate(date.getFormattedDate()), date.getWords()));
+            });
             String lastDateString = wordsByMonths.get(wordsByMonths.size() - 1).getFormattedDate();
             int lastMonthId = extractMonthId(lastDateString);
             int lastYear = Integer.valueOf(lastDateString.substring(0, 4));
@@ -106,7 +129,7 @@ public class OverallStatisticsJob implements Job {
             Calendar cal = Calendar.getInstance();
             cal.set(YEAR, lastYear);
             cal.set(MONTH, lastMonthId);
-            DateUtils.ceiling(cal, MONTH);
+            cal = DateUtils.truncate(cal, MONTH);
 
             double weight = 0;
             for (int i = wordsByMonths.size() - 2; i > wordsByMonths.size() - 8; i--) {
@@ -122,16 +145,35 @@ public class OverallStatisticsJob implements Job {
                 int year = cal.get(YEAR);
                 Double expected = monthsActivityProportion.get(cal.get(MONTH)) * lastYearWordsEquality;
                 writer.write(year + "-" + (monthId + 1), expected.intValue(), "prediction");
+                prediction.add(new PointOnTime(cal.getTime(), expected.intValue()));
                 cal.add(MONTH, 1);
             }
         }
 
+        long messagesCount = messagesService.selectMessagesCount();
+        long wordsCount1 = messagesService.selectWordsCount();
+
         logger.info("Writing overall statistic");
         try (ClWriter writer = new ClWriter(overallStatsFile)) {
-            writer.write("messages_total", messagesService.selectMessagesCount());
-            writer.write("words_total", messagesService.selectWordsCount());
-            writer.write("expected_current_year", lastYearWordsEquality);
+            writer.write("messages_total", messagesCount);
+            writer.write("words_total", wordsCount1);
+            writer.write("average_density", UserStatisticsJob.FORMAT_DENSITY.format(Long.valueOf(wordsCount1).doubleValue()
+                    / messagesCount));
+            writer.write("expected_words_sum_current_year", lastYearWordsEquality);
         }
+
+        logger.info("Writing graph data...");
+        List graphData = Arrays.asList(actual, prediction);
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.setDateFormat(DATE_FORMAT);
+        objectMapper.writeValue(byMonthsJsonFile, graphData);
+    }
+
+    private Date toDate(String dateString) {
+        Calendar cal = Calendar.getInstance();
+        cal.set(YEAR, Integer.valueOf(dateString.substring(0, 4)));
+        cal.set(MONTH, extractMonthId(dateString));
+        return DateUtils.truncate(cal, MONTH).getTime();
     }
 
     private int extractMonthId(String dateString) {

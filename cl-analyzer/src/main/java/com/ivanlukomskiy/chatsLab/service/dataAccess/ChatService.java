@@ -1,4 +1,4 @@
-package com.ivanlukomskiy.chatsLab.service;
+package com.ivanlukomskiy.chatsLab.service.dataAccess;
 
 import com.ivanlukomskiy.chatsLab.model.Chat;
 import com.ivanlukomskiy.chatsLab.repository.ChatRepository;
@@ -7,17 +7,13 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Created by ivanl <ilukomskiy@sbdagroup.com> on 09.10.2017.

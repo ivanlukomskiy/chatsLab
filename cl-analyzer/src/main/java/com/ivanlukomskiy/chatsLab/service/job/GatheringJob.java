@@ -1,12 +1,13 @@
-package com.ivanlukomskiy.chatsLab.service;
+package com.ivanlukomskiy.chatsLab.service.job;
 
+import com.ivanlukomskiy.chatsLab.service.GatheringService;
+import com.ivanlukomskiy.chatsLab.service.Job;
 import lombok.SneakyThrows;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import java.nio.file.Files;

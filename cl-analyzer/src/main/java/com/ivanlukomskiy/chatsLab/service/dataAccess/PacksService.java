@@ -1,4 +1,4 @@
-package com.ivanlukomskiy.chatsLab.service;
+package com.ivanlukomskiy.chatsLab.service.dataAccess;
 
 import com.ivanlukomskiy.chatsLab.model.Pack;
 import com.ivanlukomskiy.chatsLab.repository.PacksRepository;
@@ -14,8 +14,12 @@ public class PacksService {
     @Autowired
     private PacksRepository packsRepository;
 
-    public void save(Pack pack) {
-        packsRepository.save(pack);
+    public Pack save(Pack pack) {
+        return packsRepository.save(pack);
+    }
+
+    public Pack findById(String id) {
+        return packsRepository.findOne(id);
     }
 
     public boolean loaded(String uuid) {

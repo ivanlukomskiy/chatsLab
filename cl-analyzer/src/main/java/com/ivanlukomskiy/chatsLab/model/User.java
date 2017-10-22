@@ -2,10 +2,7 @@ package com.ivanlukomskiy.chatsLab.model;
 
 import lombok.Data;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.util.Date;
 
 /**
@@ -23,6 +20,9 @@ public class User {
     private String lastName;
     @Column(nullable = false)
     private Date updated;
+    @Column
+    @Enumerated(value = EnumType.STRING)
+    private Gender gender;
 
     public static User of(UserDto userDto, Date updated) {
         User user = new User();
