@@ -30,4 +30,8 @@ public class UserToWords {
         messages = ((BigInteger)obj[5]).longValue();
         density = ((Long)words).doubleValue()/messages;
     }
+
+    public String getNameAndSurname() {
+        return firstName + " " +lastName;
+    }
 }

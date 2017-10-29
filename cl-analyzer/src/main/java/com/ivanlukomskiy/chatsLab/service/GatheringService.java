@@ -153,10 +153,19 @@ public class GatheringService {
     }
 
     public static int getWordsNumber(String content) {
-        if (content.trim().isEmpty()) {
+        String trimmed = content.trim();
+        if (trimmed.isEmpty()) {
             return 0;
         }
-        return content.split("[\\.,;\\s\\?\\!]+").length;
+        return trimmed.split("[.,;\\s?!)(\"]+").length;
+    }
+
+    public static String[] getWordsSplit(String content) {
+        String trimmed = content.trim();
+        if (trimmed.isEmpty()) {
+            return new String[]{};
+        }
+        return trimmed.split("[.,;\\s?!)(\"]+");
     }
 
     @SneakyThrows

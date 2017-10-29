@@ -8,6 +8,8 @@ import com.ivanlukomskiy.chatsLab.model.dto.UserToWords;
 import com.ivanlukomskiy.chatsLab.repository.MessageRepository;
 import org.apache.commons.lang.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.math.BigInteger;
@@ -79,6 +81,22 @@ public class MessagesService {
                 .collect(toList());
     }
 
+    public Page<Message> getByPage(int page) {
+        PageRequest pageRequest = new PageRequest(page, 50000);
+        return messageRepository.findAll(pageRequest);
+    }
+
+    public Map<Integer, Long> getWordsByDayOfWeek() {
+        List<Object[]> wordsByDaysOfWeek = messageRepository.getWordsByDaysOfWeek();
+        Map<Integer, Long> dayOfWeekToWords = new HashMap<>();
+        for (Object[] obj : wordsByDaysOfWeek) {
+            long words = ((BigInteger) obj[1]).longValue();
+            int dayOfWeek = ((Double) obj[0]).intValue();
+            dayOfWeekToWords.put(dayOfWeek, words);
+        }
+        return dayOfWeekToWords;
+    }
+
     public List<ChatNameToWords> getWordsByChats() {
         return messageRepository.getWordsByChats().stream().map(ChatNameToWords::new).collect(toList());
     }
@@ -106,6 +124,11 @@ public class MessagesService {
         Date minusYear = cal.getTime();
         return messageRepository.getWordsBySender(minusYear, last).stream()
                 .map(UserToWords::new).collect(toList());
+    }
+
+    public List<DateToWords> getUserActivityByMonths(Integer userId) {
+        return messageRepository.getWordsByMonthsAndUser(userId).stream()
+                .map(DateToWords::new).collect(Collectors.toList());
     }
 
     public Map<Integer, List<UserToWords>> getWordsByUserAndYears() {

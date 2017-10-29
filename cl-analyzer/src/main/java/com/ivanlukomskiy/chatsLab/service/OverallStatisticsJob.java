@@ -19,7 +19,9 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 import static java.io.File.separator;
+import static java.lang.Math.log;
 import static java.lang.Math.round;
+import static java.util.Calendar.DAY_OF_WEEK;
 import static java.util.Calendar.MONTH;
 import static java.util.Calendar.YEAR;
 import static java.util.Locale.ENGLISH;
@@ -37,8 +39,11 @@ public class OverallStatisticsJob implements Job {
     private static final String BY_MONTHS = "words_by_months.csv";
     private static final String BY_MONTHS_JSON = "words_by_months.json";
     private static final String BY_DAYS = "words_by_days_last_year.json";
+    private static final String DAY_OF_WEEK_ACTIVITY = "day_of_week_activity.json";
 
     private static final DecimalFormat FORMAT_PROPORTIONS = new DecimalFormat("#.##",
+            new DecimalFormatSymbols(Locale.US));
+    private static final DecimalFormat FORMAT_WORDS = new DecimalFormat("#.####",
             new DecimalFormatSymbols(Locale.US));
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
 
@@ -61,17 +66,23 @@ public class OverallStatisticsJob implements Job {
         File byMonthsFile = new File(exportDir + separator + BY_MONTHS);
         File byMonthsJsonFile = new File(exportDir + separator + BY_MONTHS_JSON);
         File byDaysLastYear = new File(exportDir + separator + BY_DAYS);
-
-        logger.info("Writing words by years...");
-        List<DateToWords> wordsByYears = messagesService.getWordsByYears();
-        try (ClWriter writer = new ClWriter(byYearsFile)) {
-            wordsByYears.forEach(date -> writer.write(date.getFormattedDate(), date.getWords()));
-        }
+        File dayOfWeekActivityFile = new File(exportDir + separator + DAY_OF_WEEK_ACTIVITY);
 
         logger.info("Writing words by days activity last year...");
         List<DateToWords> wordsByDaysLastYear = messagesService.getWordsByDatsLastYear();
         try (ClWriter writer = new ClWriter(byDaysLastYear)) {
             wordsByDaysLastYear.forEach(date -> writer.write(date.getFormattedDate(), date.getWords()));
+        }
+
+        logger.info("Writing days of week activity");
+        Map<Integer, Long> wordsByDayOfWeek = messagesService.getWordsByDayOfWeek();
+        try(ClWriter writer = new ClWriter(dayOfWeekActivityFile)) {
+            Long sum = wordsByDayOfWeek.values().stream().mapToLong(i -> i).sum();
+            List<Map.Entry<Integer, Long>> dowToWords = new ArrayList<>(wordsByDayOfWeek.entrySet());
+            dowToWords.sort(Comparator.comparing(Map.Entry::getKey));
+            for (Map.Entry<Integer, Long> entry : dowToWords) {
+                writer.write(entry.getKey(), FORMAT_WORDS.format(entry.getValue().doubleValue() / sum));
+            }
         }
 
         List<DateToWords> wordsByMonths = messagesService.getWordsByMonths();
@@ -112,6 +123,7 @@ public class OverallStatisticsJob implements Job {
         List<PointOnTime> actual = new ArrayList<>();
         List<PointOnTime> prediction = new ArrayList<>();
         int wordsLastSixMonths = 0;
+        long expectedWordsIncreaseThisYear;
         long lastYearWordsEquality;
         try (ClWriter writer = new ClWriter(byMonthsFile)) {
             wordsByMonths.forEach(date -> {
@@ -133,8 +145,16 @@ public class OverallStatisticsJob implements Job {
                 int monthId = extractMonthId(wordsByMonths.get(i).getFormattedDate());
                 weight += monthsActivityProportion.get(monthId);
             }
+
+            // Calculate weight left
+            double weightLeft = 0;
+            for(int i = lastMonthId + 1; i < 12; i++) {
+                weightLeft += monthsActivityProportion.get(i);
+            }
+            expectedWordsIncreaseThisYear = Double.valueOf(weightLeft * wordsLastSixMonths / weight).longValue();
+
             lastYearWordsEquality = (int) round(wordsLastSixMonths / weight);
-            yearPredictionMultiplier = 1 / weight;
+            yearPredictionMultiplier = 1 / (1 - weightLeft);
 
             for (int i = 0; i < 6; i++) {
                 int monthId = cal.get(MONTH);
@@ -143,6 +163,27 @@ public class OverallStatisticsJob implements Job {
                 writer.write(year + "-" + (monthId + 1), expected.intValue(), "prediction");
                 prediction.add(new PointOnTime(cal.getTime(), expected.intValue()));
                 cal.add(MONTH, 1);
+            }
+        }
+
+        logger.info("Writing words by years...");
+        List<DateToWords> wordsByYears = messagesService.getWordsByYears();
+        try (ClWriter writer = new ClWriter(byYearsFile)) {
+            long lastYearWords = 0;
+            for (int i = 0 ; i < wordsByYears.size(); i++) {
+                Long words = wordsByYears.get(i).getWords();
+                double delta = 0D;
+                Long expectedIncrease = 0L;
+                if(i == wordsByYears.size() - 1) {
+                    expectedIncrease = expectedWordsIncreaseThisYear;
+                } else if (lastYearWords != 0){
+                    delta = (new Long(words - lastYearWords).doubleValue())/lastYearWords;
+                }
+                writer.write(wordsByYears.get(i).getFormattedDate(),
+                        FORMAT_PROPORTIONS.format(words.doubleValue()/1000000),
+                        FORMAT_PROPORTIONS.format(expectedIncrease.doubleValue()/1000000),
+                        FORMAT_PROPORTIONS.format(delta * 100));
+                lastYearWords = words;
             }
         }
 

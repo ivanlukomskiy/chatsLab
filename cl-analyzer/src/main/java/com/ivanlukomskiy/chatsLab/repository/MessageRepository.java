@@ -3,6 +3,8 @@ package com.ivanlukomskiy.chatsLab.repository;
 import com.ivanlukomskiy.chatsLab.model.Message;
 import com.ivanlukomskiy.chatsLab.model.User;
 import com.ivanlukomskiy.chatsLab.model.dto.DateToWords;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -43,9 +45,18 @@ public interface MessageRepository extends JpaRepository<Message, Integer> {
             " GROUP BY date_formatted order by date_formatted", nativeQuery = true)
     List<Object[]> getWordsByDays(@Param("start") Date start, @Param("end") Date end);
 
+    @Query(value = "SELECT extract(dow from mes.time) as date_formatted, sum(mes.words_number) " +
+            "FROM cl_messages mes GROUP BY date_formatted order by date_formatted", nativeQuery = true)
+    List<Object[]> getWordsByDaysOfWeek();
+
     @Query(value = "SELECT to_char(mes.time, 'yyyy-mm') as date_formatted, sum(mes.words_number) " +
             "FROM cl_messages mes GROUP BY date_formatted order by date_formatted", nativeQuery = true)
     List<Object[]> getWordsByMonths();
+
+    @Query(value = "SELECT to_char(mes.time, 'yyyy-mm') as date_formatted, sum(mes.words_number) " +
+            "FROM cl_messages mes WHERE mes.sender_id=:userId GROUP BY date_formatted " +
+            "order by date_formatted", nativeQuery = true)
+    List<Object[]> getWordsByMonthsAndUser(@Param("userId") Integer userId);
 
     @Query("select count(m) from Message m where m.time >= :start and m.time < :end " +
             "and m.sender = :user")
@@ -63,6 +74,8 @@ public interface MessageRepository extends JpaRepository<Message, Integer> {
             "    ON groupped.id = chat.id " +
             "ORDER BY groupped.cnt DESC", nativeQuery = true)
     List<Object[]> getWordsByChats();
+
+    Page<Message> findAll(Pageable page);
 
     @Query(value = "SELECT" +
             "  chat.name," +

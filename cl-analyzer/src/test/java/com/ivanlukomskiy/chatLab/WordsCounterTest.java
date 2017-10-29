@@ -66,4 +66,16 @@ public class WordsCounterTest {
     public void test12() {
         assertEquals(getWordsNumber(" раз.два;три\"четыре пять,шесть   "),6);
     }
+    @Test
+    public void test13() {
+        assertEquals(getWordsNumber(" скобочки)))) )   "),1);
+    }
+    @Test
+    public void test14() {
+        assertEquals(getWordsNumber("))))"),0);
+    }
+    @Test
+    public void test15() {
+        assertEquals(getWordsNumber("Ктооо?)"),1);
+    }
 }
