@@ -2,8 +2,8 @@
   "welcome": {
     "token_saved": {
       "text": {
-        "ru": "<html>Привет!<br>Токен доступа к Вконтакте сохранён на диске с прошлого раза<br>Попробовать использовать его или создать новый?",
-        "en": "<html>Hi!<br>Your VK access token is stored on disk.<br>Would you like to use it or create a new one?"
+        "ru": "<html>Токен доступа к Вконтакте сохранён на диске с прошлого раза<br>Попробовать использовать его или создать новый?",
+        "en": "<html>Your VK access token is stored on disk.<br>Would you like to use it or create a new one?"
       },
       "use_saved": {
         "ru": "Использовать токен из файла",
@@ -16,8 +16,8 @@
     },
     "first_boot": {
       "text": {
-        "ru": "<html>Привет!<br>Чтобы получить возможность скачивать чаты из Вконтакте, требуется временно разрешить приложению доступ к вашему акканту.<br>Для этого нажмите кнопку \"Открыть ссылку в браузере\" и откройте доступ для приложения \"VkMessagesFetching\".<br>Чтобы программа могла скачивать чаты, нужно скопировать код пользователя из адресной строки. Это текст, идущий после \"https://oauth.vk.com/blank.html#code=\" и скопировать в поле внизу этого окна, после чего нажать \"Далее\"<br>",
-        "en": "<html> Hi!<br> Before you will select chats which needs to be download, let's do authentication and get your VK API access token.<br> Open the link below and give permissions to \"VkMessagesFetching\" application.<br> Then copy the text after \"code=\" in the URL to the field below and press \"Next Step\""
+        "ru": "<html>Чтобы получить возможность скачивать чаты из Вконтакте, требуется временно разрешить приложению доступ к вашему акканту.<br>Для этого нажмите кнопку \"Открыть ссылку в браузере\" и откройте доступ для приложения \"VkMessagesFetching\".<br>Чтобы программа могла скачивать чаты, нужно скопировать код пользователя из адресной строки. Это текст, идущий после \"https://oauth.vk.com/blank.html#code=\" и скопировать в поле внизу этого окна, после чего нажать \"Далее\"<br>",
+        "en": "<html>Before you will select chats which needs to be download, let's do authentication and get your VK API access token.<br> Open the link below and give permissions to \"VkMessagesFetching\" application.<br> Then copy the text after \"code=\" in the URL to the field below and press \"Next Step\""
       },
       "next": {
         "ru": "Далее",
@@ -79,6 +79,28 @@
     "chat_name": {
       "ru": "Название чата",
       "en": "Chat name"
+    }
+  },
+  "telegram": {
+    "skip": {
+      "ru": "Пропустить",
+      "en": "Skip"
+    },
+    "downloading": {
+      "ru": "Загрузка...",
+      "en": "Downloading..."
+    },
+    "choose": {
+      "ru": "Выбрать",
+      "en": "Select"
+    },
+    "titleChoose": {
+      "ru": "Выберите чатики Телеграм для скачивания",
+      "en": "Choose telegram chats for download"
+    },
+    "fileChoose": {
+      "ru": "Выберите файл с экспортом Телеграма",
+      "en": "Choose telegram export file"
     }
   },
   "downloading": {

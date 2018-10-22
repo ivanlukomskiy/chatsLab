@@ -2,25 +2,34 @@ package com.ivanlukomskiy.chatsLab.gui;
 
 import com.google.gson.JsonSyntaxException;
 import com.ivanlukomskiy.chatsLab.model.ChatGuiDto;
+import com.ivanlukomskiy.chatsLab.model.ChatTableElement;
+import com.ivanlukomskiy.chatsLab.model.JsonNodeTableElement;
+import com.ivanlukomskiy.chatsLab.service.TelegramJsonParser;
+import com.ivanlukomskiy.chatsLab.service.TelegramParser;
 import com.ivanlukomskiy.chatsLab.service.VkService;
 import com.ivanlukomskiy.chatsLab.util.Localization;
 import com.ivanlukomskiy.chatsLab.util.LocalizationHolder;
-import com.vk.api.sdk.exceptions.ApiException;
-import com.vk.api.sdk.exceptions.ClientException;
 import lombok.SneakyThrows;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.codehaus.jackson.JsonNode;
 
 import javax.swing.*;
 import javax.swing.UIManager.LookAndFeelInfo;
+import javax.swing.border.EmptyBorder;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
+import java.awt.event.ActionListener;
+import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 
 import static com.ivanlukomskiy.chatsLab.service.IOService.INSTANCE;
 import static com.ivanlukomskiy.chatsLab.util.LocalizationHolder.LOCALIZATION_RESOURCE;
 import static com.ivanlukomskiy.chatsLab.util.LocalizationHolder.localization;
 import static java.awt.EventQueue.invokeLater;
+import static java.util.stream.Collectors.toList;
 import static javax.swing.GroupLayout.Alignment.*;
 import static javax.swing.GroupLayout.DEFAULT_SIZE;
 import static javax.swing.GroupLayout.PREFERRED_SIZE;
@@ -32,10 +41,12 @@ import static javax.swing.UIManager.setLookAndFeel;
 
 /**
  * Downloader GUI
+ *
  * @author ivan_l
  */
 public class MainFrame extends javax.swing.JFrame implements DownloadingStatusListener {
     private static final Logger logger = LogManager.getLogger(MainFrame.class);
+    private static final TelegramParser TELEGRAM_PARSER = new TelegramJsonParser();
 
     private VkService vkService = new VkService();
     private List<ChatGuiDto> chats;
@@ -75,12 +86,7 @@ public class MainFrame extends javax.swing.JFrame implements DownloadingStatusLi
         SwingWorker worker = new SwingWorker<Void, Void>() {
             @Override
             public Void doInBackground() {
-                try {
-                    INSTANCE.deserialize();
-                    switchToCard("loadOrCreateDialogue");
-                } catch (IOException | JsonSyntaxException e) {
-                    switchToCard("startAuth");
-                }
+                switchToCard("telegramSelect");
                 return null;
             }
         };
@@ -130,6 +136,141 @@ public class MainFrame extends javax.swing.JFrame implements DownloadingStatusLi
         switchToCard("listCard");
     }
 
+    private JPanel buildTelegramSelectPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+
+        JLabel label = new JLabel(localization.getText("telegram.fileChoose"));
+        label.setBorder(new EmptyBorder(10, 10, 10, 10));
+
+
+        chooser = new JFileChooser();
+        chooser.setFileFilter(new FileNameExtensionFilter("Telegram JSON export", "json"));
+        chooser.setControlButtonsAreShown(false);
+        chooser.setMultiSelectionEnabled(false);
+        chooser.addActionListener(evt -> telegramUploadClicked());
+
+        panel.add(label, BorderLayout.NORTH);
+        panel.add(chooser, BorderLayout.CENTER);
+
+        JButton approve = new JButton(localization.getText("telegram.choose"));
+        approve.addActionListener(evt -> telegramUploadClicked());
+
+        JButton cancel = new JButton(localization.getText("telegram.skip"));
+        cancel.addActionListener(evt -> switchToVk());
+
+        JPanel subPanel = new JPanel();
+        subPanel.add(approve);
+        subPanel.add(cancel);
+
+        panel.add(subPanel, BorderLayout.SOUTH);
+
+        return panel;
+    }
+
+    private void switchToVk() {
+        SwingWorker worker = new SwingWorker<Void, Void>() {
+            @Override
+            public Void doInBackground() {
+                try {
+                    INSTANCE.deserialize();
+                    switchToCard("loadOrCreateDialogue");
+                } catch (IOException | JsonSyntaxException e) {
+                    switchToCard("startAuth");
+                }
+                return null;
+            }
+        };
+        worker.execute();
+    }
+
+    private void telegramUploadClicked() {
+        File file = chooser.getSelectedFile();
+        if (file == null || !file.exists()) {
+            return;
+        }
+        System.out.println("Valid file is " + file.getAbsolutePath());
+
+        SwingWorker worker = new SwingWorker<Void, Void>() {
+            @Override
+            public Void doInBackground() {
+                try {
+                    setStatusGui(localization.getText("telegram.downloading"));
+                    List<JsonNodeTableElement> chats = TELEGRAM_PARSER.getChats(file.getAbsolutePath()).stream()
+                            .map(JsonNodeTableElement::new)
+                            .collect(toList());
+                    telegramChatsTable.setModel(new ChatsListTableModel(chats));
+                    telegramChatsTable.getColumnModel().getColumn(0).setMaxWidth(50);
+                    switchToCard("telegramChatsSelect");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    switchToCard("telegramChatsSelect");
+                }
+                return null;
+            }
+        };
+        worker.execute();
+    }
+
+    private JPanel initChatsTable(JTable table, ActionListener l, String buttonText, String labelText) {
+        JScrollPane jScrollPane1 = new JScrollPane();
+        JLabel jLabel1 = new JLabel();
+        JButton jButton1 = new JButton();
+        JPanel listCard = new JPanel();
+
+        table.setModel(new javax.swing.table.DefaultTableModel(
+                new Object[][]{
+                        {null, null},
+                        {null, null}
+                },
+                new String[]{
+                        "", ""
+                }
+        ) {
+            Class[] types = new Class[]{
+                    java.lang.Boolean.class, java.lang.String.class, java.lang.String.class
+            };
+
+            public Class getColumnClass(int columnIndex) {
+                return types[columnIndex];
+            }
+        });
+        jScrollPane1.setViewportView(table);
+
+        jLabel1.setText(labelText);
+
+        jButton1.setText(buttonText);
+        jButton1.addActionListener(l);
+
+        GroupLayout listCardLayout = new GroupLayout(listCard);
+        listCard.setLayout(listCardLayout);
+        listCardLayout.setHorizontalGroup(
+                listCardLayout.createParallelGroup(LEADING)
+                        .addComponent(jScrollPane1, DEFAULT_SIZE, 635, Short.MAX_VALUE)
+                        .addComponent(jLabel1, DEFAULT_SIZE, DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addGroup(TRAILING, listCardLayout.createSequentialGroup()
+                                .addContainerGap()
+                                .addPreferredGap(RELATED, DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addComponent(jButton1, PREFERRED_SIZE, 160, PREFERRED_SIZE)
+                        )
+        );
+        listCardLayout.setVerticalGroup(
+                listCardLayout.createParallelGroup(LEADING)
+                        .addGroup(listCardLayout.createSequentialGroup()
+                                .addComponent(jLabel1)
+                                .addPreferredGap(RELATED)
+                                .addComponent(jScrollPane1, DEFAULT_SIZE, 454, Short.MAX_VALUE)
+                                .addPreferredGap(RELATED)
+                                .addGroup(listCardLayout.createParallelGroup(BASELINE)
+                                        .addComponent(jButton1)
+                                )));
+
+        return listCard;
+    }
+
+    private void telegramChatsSelected() {
+        switchToVk();
+    }
+
     @SuppressWarnings("unchecked")
     private void initComponents() {
         containerPanel = new JPanel();
@@ -149,16 +290,12 @@ public class MainFrame extends javax.swing.JFrame implements DownloadingStatusLi
         JLabel loadOrCreateLabel = new JLabel();
         JButton createNewOneButton = new JButton();
         JButton useStoredButton = new JButton();
-        JPanel listCard = new JPanel();
-        JScrollPane jScrollPane1 = new JScrollPane();
-        chatsTable = new JTable();
-        JLabel jLabel1 = new JLabel();
-        JButton jButton1 = new JButton();
         JPanel downloadingFinishedCard = new JPanel();
         JLabel jLabel3 = new JLabel();
         JButton jButton3 = new JButton();
         JButton jButton4 = new JButton();
         JPanel jPanel1 = new JPanel();
+
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("ChatsLab");
@@ -169,6 +306,15 @@ public class MainFrame extends javax.swing.JFrame implements DownloadingStatusLi
         statusLabel.setText("Trying to read the config...");
 
         GroupLayout statusCardLayout = new GroupLayout(statusCard);
+
+        containerPanel.add(buildTelegramSelectPanel(), "telegramSelect");
+
+        telegramChatsTable = new JTable();
+        containerPanel.add(initChatsTable(telegramChatsTable, evt -> telegramChatsSelected(),
+                localization.getText("telegram.choose"),
+                localization.getText("telegram.titleChoose")),
+                "telegramChatsSelect");
+
         statusCard.setLayout(statusCardLayout);
         statusCardLayout.setHorizontalGroup(
                 statusCardLayout.createParallelGroup(LEADING)
@@ -296,53 +442,10 @@ public class MainFrame extends javax.swing.JFrame implements DownloadingStatusLi
 
         containerPanel.add(loadOrCreateDialogCard, "loadOrCreateDialogue");
 
-        chatsTable.setModel(new javax.swing.table.DefaultTableModel(
-                new Object[][]{
-                        {null, null},
-                        {null, null}
-                },
-                new String[]{
-                        "", ""
-                }
-        ) {
-            Class[] types = new Class[]{
-                    java.lang.Boolean.class, java.lang.String.class, java.lang.String.class
-            };
-
-            public Class getColumnClass(int columnIndex) {
-                return types[columnIndex];
-            }
-        });
-        jScrollPane1.setViewportView(chatsTable);
-
-        jLabel1.setText(localization.getText("download_window.text"));
-
-        jButton1.setText(localization.getText("download_window.download"));
-        jButton1.addActionListener(evt -> jButton1ActionPerformed());
-
-        GroupLayout listCardLayout = new GroupLayout(listCard);
-        listCard.setLayout(listCardLayout);
-        listCardLayout.setHorizontalGroup(
-                listCardLayout.createParallelGroup(LEADING)
-                        .addComponent(jScrollPane1, DEFAULT_SIZE, 635, Short.MAX_VALUE)
-                        .addComponent(jLabel1, DEFAULT_SIZE, DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addGroup(TRAILING, listCardLayout.createSequentialGroup()
-                                .addContainerGap()
-                                .addPreferredGap(RELATED, DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addComponent(jButton1, PREFERRED_SIZE, 160, PREFERRED_SIZE))
-        );
-        listCardLayout.setVerticalGroup(
-                listCardLayout.createParallelGroup(LEADING)
-                        .addGroup(listCardLayout.createSequentialGroup()
-                                .addComponent(jLabel1)
-                                .addPreferredGap(RELATED)
-                                .addComponent(jScrollPane1, DEFAULT_SIZE, 454, Short.MAX_VALUE)
-                                .addPreferredGap(RELATED)
-                                .addGroup(listCardLayout.createParallelGroup(BASELINE)
-                                        .addComponent(jButton1)
-                                )));
-
-        containerPanel.add(listCard, "listCard");
+        chatsTable = new JTable();
+        containerPanel.add(initChatsTable(chatsTable, evt -> jButton1ActionPerformed(),
+                localization.getText("download_window.download"),
+                localization.getText("download_window.text")), "listCard");
 
         jLabel3.setHorizontalAlignment(CENTER);
         jLabel3.setText(localization.getText("finished.text"));
@@ -465,7 +568,7 @@ public class MainFrame extends javax.swing.JFrame implements DownloadingStatusLi
                 try {
                     chats = vkService.loadDialogues();
                     showChatsSelectCard();
-                } catch (ApiException | ClientException | InterruptedException e) {
+                } catch (Exception e) {
                     setFailedGui(localization.getText("authentication.error", e.getMessage()),
                             localization.getText("authentication.try_again"), "startAuth");
                 }
@@ -486,7 +589,7 @@ public class MainFrame extends javax.swing.JFrame implements DownloadingStatusLi
                 }
                 try {
                     setStatusGui(localization.getText("downloading_started"));
-                    vkService.downloadMessages(chats, listener);
+                    vkService.downloadMessages(chats, getTelegramChats(), listener);
                     switchToCard("downloadingFinished");
                 } catch (Exception e) {
                     logger.error("Failed to download messages", e);
@@ -499,6 +602,21 @@ public class MainFrame extends javax.swing.JFrame implements DownloadingStatusLi
         worker.execute();
     }
 
+    private List<JsonNode> getTelegramChats() {
+        try {
+            ChatsListTableModel model = (ChatsListTableModel) telegramChatsTable.getModel();
+            List<? extends ChatTableElement> data = model.getData();
+            return data.stream().map(elem -> (JsonNodeTableElement) elem)
+                    .filter(JsonNodeTableElement::isDownload)
+                    .map(JsonNodeTableElement::getNode)
+                    .collect(toList());
+        } catch (Exception e) {
+            logger.error("Failed to get telegram chats", e);
+            return Collections.emptyList();
+        }
+    }
+
+
     private void jButton4ActionPerformed() {
         switchToCard("listCard");
     }
@@ -508,10 +626,12 @@ public class MainFrame extends javax.swing.JFrame implements DownloadingStatusLi
     }
 
     private JTable chatsTable;
+    private JTable telegramChatsTable;
     private JPanel containerPanel;
     private JButton failedButton;
     private JLabel failedLabel;
     private JCheckBox saveToDiskBox;
     private JLabel statusLabel;
     private JTextField userCodeField;
+    private JFileChooser chooser;
 }

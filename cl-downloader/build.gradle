@@ -1,6 +1,6 @@
 dependencies {
     compile project(":cl-core")
-    compile("com.vk.api:sdk:0.3.7")
+    compile group: 'com.vk.api', name: 'sdk', version: '0.5.12'
     compile group: 'org.zeroturnaround', name: 'zt-zip', version: '1.12'
     compile group: 'org.codehaus.jackson', name: 'jackson-mapper-asl', version: '1.9.13'
 }

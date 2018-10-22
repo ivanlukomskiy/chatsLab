@@ -3,7 +3,10 @@ package com.ivanlukomskiy.chatsLab.service;
 import com.ivanlukomskiy.chatsLab.model.ChatDto;
 import com.ivanlukomskiy.chatsLab.model.MessageDto;
 import com.ivanlukomskiy.chatsLab.model.UserDto;
+import org.codehaus.jackson.JsonNode;
 
+import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -17,5 +20,6 @@ public interface Dumper {
     void finishWriting();
     void writeUsers(Map<Integer, UserDto> users);
     void writeMetaInfo(int providerId);
+    void writeTelegramChats(List<JsonNode> chats);
     void finalize();
 }

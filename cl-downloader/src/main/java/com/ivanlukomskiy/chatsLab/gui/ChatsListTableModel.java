@@ -1,6 +1,8 @@
 package com.ivanlukomskiy.chatsLab.gui;
 
 import com.ivanlukomskiy.chatsLab.model.ChatGuiDto;
+import com.ivanlukomskiy.chatsLab.model.ChatTableElement;
+import lombok.Getter;
 
 import javax.swing.table.AbstractTableModel;
 import java.util.List;
@@ -13,14 +15,15 @@ import static com.ivanlukomskiy.chatsLab.util.LocalizationHolder.localization;
  */
 public class ChatsListTableModel extends AbstractTableModel {
 
-    public ChatsListTableModel(List<ChatGuiDto> data) {
+    public ChatsListTableModel(List<? extends ChatTableElement> data) {
         this.data = data;
         columnNames = new String[]{"", localization.getText("download_window.chat_name")};
     }
 
     private String[] columnNames;
 
-    private final List<ChatGuiDto> data;
+    @Getter
+    private final List<? extends ChatTableElement> data;
 
     @Override
     public int getColumnCount() {
@@ -39,7 +42,7 @@ public class ChatsListTableModel extends AbstractTableModel {
 
     @Override
     public Object getValueAt(int row, int col) {
-        ChatGuiDto chat = data.get(row);
+        ChatTableElement chat = data.get(row);
 
         Object value = null;
         switch (col) {
@@ -78,7 +81,7 @@ public class ChatsListTableModel extends AbstractTableModel {
      */
     @Override
     public void setValueAt(Object value, int row, int col) {
-        ChatGuiDto chat = data.get(row);
+        ChatTableElement chat = data.get(row);
         chat.setDownload((Boolean) value);
     }
 }

@@ -38,14 +38,14 @@ public class OverallStatisticsJob implements Job {
     private static final String MONTHS_ACTIVITY = "months_activity.csv";
     private static final String BY_MONTHS = "words_by_months.csv";
     private static final String BY_MONTHS_JSON = "words_by_months.json";
-    private static final String BY_DAYS = "words_by_days_last_year.json";
-    private static final String DAY_OF_WEEK_ACTIVITY = "day_of_week_activity.json";
+    private static final String BY_DAYS = "words_by_days_last_year.csv";
+    private static final String DAY_OF_WEEK_ACTIVITY = "day_of_week_activity.csv";
 
     private static final DecimalFormat FORMAT_PROPORTIONS = new DecimalFormat("#.##",
             new DecimalFormatSymbols(Locale.US));
     private static final DecimalFormat FORMAT_WORDS = new DecimalFormat("#.####",
             new DecimalFormatSymbols(Locale.US));
-    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
+    public static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
 
     @Autowired
     private ExportPathHolder exportPathHolder;
@@ -206,14 +206,15 @@ public class OverallStatisticsJob implements Job {
         objectMapper.writeValue(byMonthsJsonFile, graphData);
     }
 
-    private Date toDate(String dateString) {
+    public static Date toDate(String dateString) {
         Calendar cal = Calendar.getInstance();
+        cal = DateUtils.truncate(cal, MONTH);
         cal.set(YEAR, Integer.valueOf(dateString.substring(0, 4)));
         cal.set(MONTH, extractMonthId(dateString));
-        return DateUtils.truncate(cal, MONTH).getTime();
+        return cal.getTime();
     }
 
-    private int extractMonthId(String dateString) {
+    private static int extractMonthId(String dateString) {
         return Integer.valueOf(dateString.substring(dateString.length() - 2, dateString.length())) - 1;
     }
 

@@ -12,22 +12,26 @@ import com.vk.api.sdk.objects.UserAuthResponse;
 import com.vk.api.sdk.objects.messages.Dialog;
 import com.vk.api.sdk.objects.messages.Message;
 import com.vk.api.sdk.objects.messages.responses.GetHistoryResponse;
-import com.vk.api.sdk.objects.stats.Sex;
 import com.vk.api.sdk.objects.users.UserXtrCounters;
 import com.vk.api.sdk.queries.messages.MessagesGetHistoryQuery;
 import com.vk.api.sdk.queries.users.UserField;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.codehaus.jackson.JsonNode;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 
-import static com.ivanlukomskiy.chatsLab.model.Gender.FEMALE;
-import static com.ivanlukomskiy.chatsLab.model.Gender.MALE;
-import static com.ivanlukomskiy.chatsLab.model.Gender.UNKNOWN;
+import static com.ivanlukomskiy.chatsLab.model.Gender.*;
 import static com.ivanlukomskiy.chatsLab.service.IOService.INSTANCE;
 import static com.ivanlukomskiy.chatsLab.util.LocalizationHolder.localization;
 
@@ -52,13 +56,30 @@ public class VkService {
     private static final int MAX_USERS_PER_REQUEST = 100;
     private static final long MIN_REQUESTS_DELAY = 500; // min delay between requests in milliseconds
 
+    private static final SimpleDateFormat THRESHOLD_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
+
     private Dumper dumper = new JsonDumper();
 
-    private UserActor getActor() {
+    public UserActor getActor() {
         return new UserActor(INSTANCE.getId(), INSTANCE.getPassword());
     }
 
-    public List<ChatGuiDto> loadDialogues() throws ClientException, InterruptedException, ApiException {
+    public String getResourceFileAsString(String fileName) {
+        InputStream is = getClass().getClassLoader().getResourceAsStream(fileName);
+        if (is != null) {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+            return reader.lines().collect(Collectors.joining(System.lineSeparator()));
+        }
+        return null;
+    }
+
+    public List<ChatGuiDto> loadDialogues() throws ClientException, InterruptedException, ApiException, ParseException {
+
+        String thresholdString = getResourceFileAsString("threshold.txt");
+        int threshold = Integer.MAX_VALUE;
+        if (thresholdString != null) {
+            threshold = (int) (THRESHOLD_FORMAT.parse(thresholdString).getTime() / 1000);
+        }
 
         TransportClient transportClient = HttpTransportClient.getInstance();
         VkApiClient vk = new VkApiClient(transportClient);
@@ -77,6 +98,12 @@ public class VkService {
 
             for (Dialog dialog : dialogues) {
                 Message message = dialog.getMessage();
+
+                Integer date = dialog.getMessage().getDate();
+                if (date < threshold) {
+                    continue;
+                }
+
                 // Skip personal and group messages
                 if (message.getChatId() == null) {
                     continue;
@@ -129,7 +156,7 @@ public class VkService {
     private Map<Integer, UserDto> idToName = new HashMap<>();
 
     public Map<Integer, UserDto> getUsersById(Set<Integer> ids, VkApiClient vk,
-                                              DownloadingStatusListener listener)
+                                              DownloadingStatusListener listener, UserActor actor)
             throws ClientException, ApiException, InterruptedException {
 
         logger.debug("Requested {} users", ids.size());
@@ -157,14 +184,14 @@ public class VkService {
 
                 long requestSentTime = System.currentTimeMillis();
 
-                List<UserXtrCounters> users = getUsers(idQuery, vk);
+                List<UserXtrCounters> users = getUsers(idQuery, vk, actor);
 
                 for (UserXtrCounters user : users) {
                     UserDto dto = new UserDto();
                     dto.setId(user.getId());
                     dto.setFirstName(user.getFirstName());
                     dto.setLastName(user.getLastName());
-                    dto.setGender(getGenderBySex(user.getSex()));
+                    dto.setGender(getGenderBySex(user.getSex().getValue()));
                     idToName.put(user.getId(), dto);
                 }
 
@@ -189,16 +216,16 @@ public class VkService {
         }
     }
 
-    public List<UserXtrCounters> getUsers(List<String> idQuery, VkApiClient vk) throws ClientException, ApiException {
-        return getUsers(idQuery, vk, 0);
+    public List<UserXtrCounters> getUsers(List<String> idQuery, VkApiClient vk, UserActor actor) throws ClientException, ApiException {
+        return getUsers(idQuery, vk, 0, actor);
     }
 
-    private List<UserXtrCounters> getUsers(List<String> idQuery, VkApiClient vk, int retries)
+    private List<UserXtrCounters> getUsers(List<String> idQuery, VkApiClient vk, int retries, UserActor actor)
             throws ClientException, ApiException {
         try {
             return vk
                     .users()
-                    .get()
+                    .get(actor)
                     .userIds(idQuery)
                     .fields(UserField.SEX)
                     .execute();
@@ -211,11 +238,12 @@ public class VkService {
                 Thread.sleep(RETRY_DELAY * 1000);
             } catch (InterruptedException ie) {
             }
-            return getUsers(idQuery, vk, retries + 1);
+            return getUsers(idQuery, vk, retries + 1, actor);
         }
     }
 
-    public void downloadMessages(List<ChatGuiDto> chats, DownloadingStatusListener listener)
+    public void downloadMessages(List<ChatGuiDto> chats, List<JsonNode> telegramChats,
+                                 DownloadingStatusListener listener)
             throws InterruptedException, ClientException, ApiException {
 
         logger.info("Writing session started");
@@ -274,11 +302,18 @@ public class VkService {
         }
         logger.info("Messages writing finished. Starting to write users");
         userIds.add(actor.getId());
-        Map<Integer, UserDto> usersById = getUsersById(userIds, vk, listener);
+        Map<Integer, UserDto> usersById = getUsersById(userIds, vk, listener, actor);
         dumper.writeUsers(usersById);
 
         logger.info("Users writing finished. Starting to write meta info");
         dumper.writeMetaInfo(actor.getId());
+
+        if (telegramChats != null && !telegramChats.isEmpty()) {
+            logger.info("Writing telegram chats...");
+            dumper.writeTelegramChats(telegramChats);
+        } else {
+            logger.info("No telegram data found");
+        }
 
         listener.changeText(localization.getText("downloading.packaging"));
         logger.info("Packaging");

@@ -5,11 +5,14 @@ import com.ivanlukomskiy.chatsLab.model.Gender;
 import com.ivanlukomskiy.chatsLab.model.User;
 import com.ivanlukomskiy.chatsLab.model.dto.DateToWords;
 import com.ivanlukomskiy.chatsLab.model.dto.UserToWords;
+import com.ivanlukomskiy.chatsLab.model.json.PointOnTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.SneakyThrows;
+import org.apache.commons.lang.time.DateUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -24,7 +27,11 @@ import java.util.stream.Stream;
 
 import static com.google.common.collect.Sets.difference;
 import static com.google.common.collect.Sets.intersection;
+import static com.ivanlukomskiy.chatsLab.service.OverallStatisticsJob.DATE_FORMAT;
+import static com.ivanlukomskiy.chatsLab.service.OverallStatisticsJob.toDate;
 import static java.io.File.separator;
+import static java.util.Calendar.MONTH;
+import static java.util.Calendar.YEAR;
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.reverseOrder;
 
@@ -48,6 +55,7 @@ public class UserStatisticsJob implements Job {
     private static final String TOP_ACTIVE_USERS_BY_YEARS = "top_active_users_by_years.csv";
     private static final String NEW_USERS_RATING = "newUsersRating.csv";
     private static final String PARTICIPANT = "participant%user.csv";
+    private static final String PARTICIPANT_JSON = "participant%user.json";
 
     @Value("${chats-lab.active-threshold-year}")
     private int activeThresholdYear = 300;
@@ -80,6 +88,7 @@ public class UserStatisticsJob implements Job {
         File topActiveUsersByYears = new File(exportDir + separator + TOP_ACTIVE_USERS_BY_YEARS);
         File newUsersRatingFile = new File(exportDir + separator + NEW_USERS_RATING);
 
+
         logger.info("Writing words by users...");
         List<UserToWords> wordsByChats = messagesService.getWordsByUser();
         try (ClWriter writer = new ClWriter(wordsByChatsFile)) {
@@ -107,13 +116,30 @@ public class UserStatisticsJob implements Job {
                 int count = 0;
                 for (DateToWords dateToWords : userActivityByMonths) {
                     writer.write(
-                            FORMAT_GENDER_PART.format(Long.valueOf(dateToWords.getWords()).doubleValue()/1000));
+                            FORMAT_GENDER_PART.format(Long.valueOf(dateToWords.getWords()).doubleValue() / 1000));
                     count++;
                     if (count == 12) break;
                 }
             }
         }
 
+
+        for (String participantId : participantIds) {
+            List<PointOnTime> points = new ArrayList<>();
+            Integer id = Integer.valueOf(participantId);
+            List<DateToWords> userActivityByMonths = messagesService.getUserActivityByMonths(id);
+            userActivityByMonths.sort(Comparator.comparing(DateToWords::getFormattedDate));
+            User user = userService.getById(id);
+            for (DateToWords dateToWords : userActivityByMonths) {
+                points.add(new PointOnTime(toDate(dateToWords.getFormattedDate()), dateToWords.getWords()));
+            }
+
+            File participantsJson = new File(exportDir + separator + PARTICIPANT_JSON.replace("%user", user.getLastName()));
+
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.setDateFormat(DATE_FORMAT);
+            objectMapper.writeValue(participantsJson, points);
+        }
 
         double yearPredictionMultiplier = overallStatisticsJob.getYearPredictionMultiplier();
 

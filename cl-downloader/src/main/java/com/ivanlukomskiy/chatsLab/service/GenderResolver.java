@@ -4,6 +4,7 @@ import com.ivanlukomskiy.chatsLab.model.Credentials;
 import com.ivanlukomskiy.chatsLab.model.Gender;
 import com.vk.api.sdk.client.TransportClient;
 import com.vk.api.sdk.client.VkApiClient;
+import com.vk.api.sdk.client.actors.UserActor;
 import com.vk.api.sdk.exceptions.ApiException;
 import com.vk.api.sdk.exceptions.ClientException;
 import com.vk.api.sdk.objects.UserAuthResponse;
@@ -34,6 +35,8 @@ public class GenderResolver {
         VkApiClient vk = new VkApiClient(transportClient);
         Scanner scanner = new Scanner(System.in);
         URI authUri = VkService.getAuthUri();
+        IOService.INSTANCE.deserialize();
+        UserActor actor = new VkService().getActor();
         System.out.println("Go to this URI to get clients code:");
         System.out.println(authUri);
         System.out.print("Enter your code: ");
@@ -44,7 +47,7 @@ public class GenderResolver {
         INSTANCE.setCredentials(new Credentials(authResponse.getUserId(), authResponse.getAccessToken()));
 
         List<String> idStrings = userIds.stream().map(String::valueOf).collect(Collectors.toList());
-        List<UserXtrCounters> users = new VkService().getUsers(idStrings, vk);
-        return users.stream().collect(toMap(UserXtrCounters::getId, user -> getGenderBySex(user.getSex())));
+        List<UserXtrCounters> users = new VkService().getUsers(idStrings, vk, actor);
+        return users.stream().collect(toMap(UserXtrCounters::getId, user -> getGenderBySex(user.getSex().getValue())));
     }
 }

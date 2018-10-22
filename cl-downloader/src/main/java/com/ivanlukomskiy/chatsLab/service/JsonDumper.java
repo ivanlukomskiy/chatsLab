@@ -1,6 +1,7 @@
 package com.ivanlukomskiy.chatsLab.service;
 
 import com.google.common.io.Resources;
+import com.ivanlukomskiy.chatsLab.gui.ChatsListTableModel;
 import com.ivanlukomskiy.chatsLab.model.ChatDto;
 import com.ivanlukomskiy.chatsLab.model.MessageDto;
 import com.ivanlukomskiy.chatsLab.model.MetaDto;
@@ -13,6 +14,7 @@ import org.apache.logging.log4j.Logger;
 import org.codehaus.jackson.JsonEncoding;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
+import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.util.DefaultPrettyPrinter;
 import org.zeroturnaround.zip.ZipUtil;
 
@@ -21,6 +23,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -37,6 +40,7 @@ import static org.codehaus.jackson.map.SerializationConfig.Feature.INDENT_OUTPUT
 public class JsonDumper implements Dumper {
     private static final Logger logger = LogManager.getLogger(VkService.class);
     private static final String VERSION_FILE_NAME = "version.info";
+    private static final String TELEGRAM_CHATS_FILENAME = "telegram.json";
 
     private JsonFactory factory = new JsonFactory();
     private JsonGenerator generator = null;
@@ -91,6 +95,12 @@ public class JsonDumper implements Dumper {
         if (latestDate == null || latestDate < message.getTimestamp()) {
             latestDate = message.getTimestamp();
         }
+    }
+
+    @SneakyThrows
+    public void writeTelegramChats(List<JsonNode> chats) {
+        OBJECT_MAPPER.enable(INDENT_OUTPUT);
+        OBJECT_MAPPER.writeValue(DOWNLOADS_TEMP.toPath().resolve(TELEGRAM_CHATS_FILENAME).toFile(), chats);
     }
 
     @Override
