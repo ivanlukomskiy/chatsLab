@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -27,12 +28,19 @@ public class GatheringJob implements Job {
     @Autowired
     private GatheringService gatheringService;
 
-    @Value("${chats-lab.sources-dir}")
-    private String sourcesDir;
+    @Value("${chats-lab.sources-dirs}")
+    private String sourcesDirs;
 
     @PostConstruct
     @SneakyThrows
     public void run() {
+        String[] dirs = sourcesDirs.split(";");
+        for (String dir : dirs) {
+            handleDir(dir);
+        }
+    }
+
+    private void handleDir(String sourcesDir) throws IOException {
         logger.info("Import process started with sources dir \"{}\"", sourcesDir);
         List<Path> packs = Files.list(Paths.get(sourcesDir))
                 .filter(path -> MESSAGES_PACK_PATTERN.matcher(path.getFileName().toString()).matches())

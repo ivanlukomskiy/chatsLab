@@ -1,5 +1,5 @@
 chats-lab:
-  sources-dir: C:\Users\ivanl\Dropbox\Чатики\New
+  sources-dirs: C:\Users\ivanl\Dropbox\Чатики\chats2017;C:\Users\ivanl\Dropbox\Чатики\chats2018
   output-dir: F:\chatsLab\
 
   # Messages per year to count user as active
@@ -9,7 +9,7 @@ chats-lab:
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/chatsLab
+    url: jdbc:postgresql://localhost:5432/chatsLab3
     username: postgres
     password:
   jpa:

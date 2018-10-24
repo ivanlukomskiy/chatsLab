@@ -29,6 +29,7 @@ import java.util.UUID;
 
 import static com.ivanlukomskiy.chatsLab.service.IOService.DOWNLOADS_FOLDER;
 import static com.ivanlukomskiy.chatsLab.util.Constants.META_FILE_NAME;
+import static com.ivanlukomskiy.chatsLab.util.Constants.TELEGRAM_FILE_NAME;
 import static com.ivanlukomskiy.chatsLab.util.Constants.USERS_FILE_NAME;
 import static com.ivanlukomskiy.chatsLab.util.JacksonUtils.OBJECT_MAPPER;
 import static org.codehaus.jackson.map.SerializationConfig.Feature.INDENT_OUTPUT;
@@ -40,7 +41,6 @@ import static org.codehaus.jackson.map.SerializationConfig.Feature.INDENT_OUTPUT
 public class JsonDumper implements Dumper {
     private static final Logger logger = LogManager.getLogger(VkService.class);
     private static final String VERSION_FILE_NAME = "version.info";
-    private static final String TELEGRAM_CHATS_FILENAME = "telegram.json";
 
     private JsonFactory factory = new JsonFactory();
     private JsonGenerator generator = null;
@@ -100,7 +100,7 @@ public class JsonDumper implements Dumper {
     @SneakyThrows
     public void writeTelegramChats(List<JsonNode> chats) {
         OBJECT_MAPPER.enable(INDENT_OUTPUT);
-        OBJECT_MAPPER.writeValue(DOWNLOADS_TEMP.toPath().resolve(TELEGRAM_CHATS_FILENAME).toFile(), chats);
+        OBJECT_MAPPER.writeValue(DOWNLOADS_TEMP.toPath().resolve(TELEGRAM_FILE_NAME).toFile(), chats);
     }
 
     @Override

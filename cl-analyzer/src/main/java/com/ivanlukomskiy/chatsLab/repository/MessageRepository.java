@@ -6,6 +6,7 @@ import com.ivanlukomskiy.chatsLab.model.dto.DateToWords;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -126,4 +127,12 @@ public interface MessageRepository extends JpaRepository<Message, Integer> {
 //            "FROM cl_messages mes WHERE mes.sender_id = :userId" +
 //            " GROUP BY date_formatted order by date_formatted", nativeQuery = true)
 //    List<Object[]> getWordsByYearsAndUser(@Param("user_id") int userId);
+
+    @Query(value = "select max(telegram_id) from cl_messages where chat_id = :chatId",
+            nativeQuery = true)
+    Long findMaxTelegramId(@Param("chatId") Integer chatId);
+
+    @Modifying
+    @Query(value = "update cl_messages set sender_id = :to where sender_id = :from", nativeQuery = true)
+    void changeMessagesSender(@Param("from") Integer from, @Param("to") Integer to);
 }

@@ -14,21 +14,32 @@ import java.util.List;
 @Entity
 @Table(name = "cl_chats")
 public class Chat {
+
     @Id
     @GeneratedValue
     private int id;
+
     @Column(nullable = false)
     private String name;
+
     @ManyToOne
-    @JoinColumn(name = "admin_id", nullable = false)
+    @JoinColumn(name = "admin_id")
     private User admin;
+
     @Column(name = "update_time", nullable = false)
     private Date updateTime;
+
     @Column(name = "messages_number", nullable = false)
     private int messagesCount;
+
     @Column(name = "words_number", nullable = false)
     private int wordsNumber;
-    @ManyToMany
+
+    @Column(name = "source", nullable = false)
+    @Enumerated(value = EnumType.STRING)
+    private MessageSource source;
+
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "cl_chat_to_pack",
             joinColumns = @JoinColumn(name = "chat_id", referencedColumnName = "id"),

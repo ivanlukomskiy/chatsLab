@@ -12,14 +12,19 @@ import java.util.Date;
 @Data
 @Table(name = "cl_users")
 public class User {
+
     @Id
     private int id;
+
     @Column(nullable = false)
     private String firstName;
+
     @Column(nullable = false)
     private String lastName;
+
     @Column(nullable = false)
     private Date updated;
+
     @Column
     @Enumerated(value = EnumType.STRING)
     private Gender gender;
@@ -31,5 +36,10 @@ public class User {
         user.setLastName(userDto.getLastName());
         user.setUpdated(updated);
         return user;
+    }
+
+    @Override
+    public String toString() {
+        return (firstName + " " + lastName).trim();
     }
 }

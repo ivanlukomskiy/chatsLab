@@ -14,7 +14,7 @@ import java.util.Set;
  * Fixes backward compatibility for downloader versions before 2.1
  * Created by ivanl <ilukomskiy@sbdagroup.com> on 21.10.2017.
  */
-@Component
+//@Component
 public class UploadGendersJob implements Job {
     private static final Logger logger = LogManager.getLogger(UploadGendersJob.class);
 

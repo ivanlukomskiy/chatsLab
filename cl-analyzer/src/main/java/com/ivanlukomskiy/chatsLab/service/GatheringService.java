@@ -23,8 +23,7 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import static com.ivanlukomskiy.chatsLab.util.Constants.META_FILE_NAME;
-import static com.ivanlukomskiy.chatsLab.util.Constants.USERS_FILE_NAME;
+import static com.ivanlukomskiy.chatsLab.util.Constants.*;
 import static com.ivanlukomskiy.chatsLab.util.JacksonUtils.OBJECT_MAPPER;
 
 /**
@@ -46,6 +45,9 @@ public class GatheringService {
 
     @Autowired
     private ChatService chatService;
+
+    @Autowired
+    private TelegramService telegramService;
 
     private ExecutorService executorService;
 
@@ -74,9 +76,18 @@ public class GatheringService {
 
             executorService = Executors.newFixedThreadPool(4);
 
-            zipFile.stream()
-                    .filter(entry -> CHAT_PATTERN.matcher(entry.getName()).matches())
-                    .forEach(entry -> loadChat(zipFile, entry, metaDto.getDownloadDate(), usersMap, pack));
+//            zipFile.stream()
+//                    .filter(entry -> CHAT_PATTERN.matcher(entry.getName()).matches())
+//                    .filter(entry -> !TELEGRAM_FILE_NAME.equals(entry.getName()))
+//                    .forEach(entry -> loadChat(zipFile, entry, metaDto.getDownloadDate(), usersMap, pack));
+
+
+            ZipEntry telegramEntry = zipFile.getEntry(TELEGRAM_FILE_NAME);
+            if (telegramEntry == null) {
+                logger.info("No telegram data in pach {} by {}", path, provider);
+            } else {
+                telegramService.loadChats(zipFile, telegramEntry, metaDto.getDownloadDate(), pack);
+            }
 
             executorService.shutdown();
             executorService.awaitTermination(5, TimeUnit.MINUTES);
@@ -112,6 +123,7 @@ public class GatheringService {
             chat.setAdmin(admin);
             chat.setUpdateTime(updateTime);
             chat.getPacks().add(pack);
+            chat.setSource(MessageSource.VK);
 
             ArrayNode messageNodes = (ArrayNode) jsonNode.get("messages");
             List<Message> messages = new ArrayList<>();
@@ -127,7 +139,7 @@ public class GatheringService {
                 message.setContent(messageDto.getContent());
                 message.setSender(usersMap.get(messageDto.getAuthor()));
                 message.setPack(pack);
-                message.setTime(new Date(((long)messageDto.getTimestamp()) * 1000));
+                message.setTime(new Date(((long) messageDto.getTimestamp()) * 1000));
                 message.setWordsNumber(wordsInMessage);
                 messages.add(message);
             }

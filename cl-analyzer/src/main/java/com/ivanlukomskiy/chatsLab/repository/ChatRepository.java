@@ -1,6 +1,7 @@
 package com.ivanlukomskiy.chatsLab.repository;
 
 import com.ivanlukomskiy.chatsLab.model.Chat;
+import com.ivanlukomskiy.chatsLab.model.MessageSource;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -17,6 +18,8 @@ public interface ChatRepository extends JpaRepository<Chat, Integer> {
     List<Object[]> getDuplicateChatNames();
 
     List<Chat> findByName(String name);
+
+    List<Chat> findByNameAndSource(String name, MessageSource source);
 
     @Modifying
     @Query(value = "UPDATE cl_messages " +
