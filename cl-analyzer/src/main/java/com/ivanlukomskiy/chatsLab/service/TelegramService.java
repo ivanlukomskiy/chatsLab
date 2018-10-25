@@ -29,7 +29,7 @@ import static java.util.Optional.ofNullable;
  */
 @Component
 public class TelegramService {
-    private static final Logger logger = LogManager.getLogger(GatheringJob.class);
+    private static final Logger logger = LogManager.getLogger(TelegramService.class);
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:SS");
     private static final Random R = new Random();
 
@@ -113,6 +113,7 @@ public class TelegramService {
                 user.setFirstName(from);
                 user.setLastName("");
                 user.setUpdated(downloadDate);
+                user.setProviderId(pack.getProvider().getId());
                 userRepository.save(user);
                 usersMap.put(from, user);
 

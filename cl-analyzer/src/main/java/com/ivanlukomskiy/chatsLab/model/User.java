@@ -29,6 +29,9 @@ public class User {
     @Enumerated(value = EnumType.STRING)
     private Gender gender;
 
+    @Column
+    private Integer providerId;
+
     public static User of(UserDto userDto, Date updated) {
         User user = new User();
         user.setId(userDto.getId());

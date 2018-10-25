@@ -14,19 +14,21 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static java.util.Comparator.comparingLong;
 import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.joining;
 
 /**
  * Created by ivanl <ilukomskiy@sbdagroup.com> on 24.10.2018.
  */
 @Component
 public class TelegramChatsMerger {
-    private static final Logger logger = LogManager.getLogger(GatheringJob.class);
+    private static final Logger logger = LogManager.getLogger(TelegramChatsMerger.class);
 
     @Autowired
     private ChatPositionFpRepository chatPositionFpRepository;
@@ -78,6 +80,7 @@ public class TelegramChatsMerger {
     @Transactional
     public void removeOutdatedUsers(Set<Integer> ids) {
         List<User> usersToDelete = userRepository.findAll(ids);
+        logger.info("Users to delete: " + ids.stream().map(String::valueOf).collect(joining(", ")));
         userRepository.delete(usersToDelete);
     }
 
@@ -99,9 +102,14 @@ public class TelegramChatsMerger {
                     String names = indFps.stream().map(fp -> fp.getSuspect().getFirstName()).collect(Collectors.joining(", "));
                     logger.debug("Suspects {} seem to be identical", names);
                     for (int i = 0; i < indFps.size() - 1; i++) {
-                        outdatedUsers.add(indFps.get(i).getSuspect().getId());
                         outdatedFps.add(indFps.get(i).getId());
-                        merge(indFps.get(i).getSuspect(), indFps.get(i + 1).getSuspect());
+                        boolean merged = merge(indFps.get(i).getSuspect(), indFps.get(i + 1).getSuspect());
+                        if (merged) {
+//                            outdatedUsers.add(indFps.get(i).getSuspect().getId());
+                            if(userRepository.exists(indFps.get(i).getId())) {
+                                userRepository.delete(indFps.get(i).getId());
+                            }
+                        }
                     }
                 }
             });
@@ -114,19 +122,41 @@ public class TelegramChatsMerger {
         return outdatedUsers;
     }
 
-    private User merge(User from, User to) {
+    private boolean merge(User from, User to) {
         if (!userRepository.exists(from.getId())) {
             logger.debug("User {} already deleted", from);
-            return to;
+            return false;
         }
         if (from.getId() == to.getId()) {
             logger.warn("Merging identical ids {}", from.getId());
-            return to;
+            return false;
         }
         messageRepository.changeMessagesSender(from.getId(), to.getId());
         chatPositionFpRepository.changeSuspect(from.getId(), to.getId());
         nameFpRepository.changeSuspect(from.getId(), to.getId());
         logger.info("Merged {} to {}", from, to);
-        return to;
+        return true;
+    }
+
+    @Transactional
+    public User mergeByMapping(Integer vkId, String telegramName, Integer providerId) throws IOException {
+        User to = userRepository.findOne(vkId);
+        if (to == null) {
+            throw new RuntimeException("Failed to find user with id " + vkId);
+        }
+        logger.info("get users by {}", telegramName);
+        List<User> matches = userRepository.getTelegramUser(telegramName, providerId);
+        if (matches.size() == 0) {
+            throw new RuntimeException("No matches for " + telegramName);
+        }
+        if (matches.size() > 1) {
+            throw new RuntimeException("Too many matches for " + telegramName);
+        }
+        User from = matches.get(0);
+
+        logger.debug("Merging {} to {}", from, to);
+        merge(from, to);
+
+        return from;
     }
 }

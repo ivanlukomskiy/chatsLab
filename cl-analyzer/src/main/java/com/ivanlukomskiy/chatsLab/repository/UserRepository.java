@@ -30,4 +30,9 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     @Modifying
     @Query("update User set gender=com.ivanlukomskiy.chatsLab.model.Gender.UNKNOWN where id in (:ids)")
     int updateSetUnknown(@Param("ids") Set<Integer> ids);
+
+    @Query("select u from User u where u.firstName = :name and u.lastName = '' " +
+            "and u.providerId=:providerId")
+    List<User> getTelegramUser(@Param("name") String name,
+                               @Param("providerId") Integer providerId);
 }

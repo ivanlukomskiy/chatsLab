@@ -3,6 +3,7 @@ package com.ivanlukomskiy.chatsLab.service;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.UnmodifiableIterator;
 import com.ivanlukomskiy.chatsLab.model.*;
+import com.ivanlukomskiy.chatsLab.repository.MergeTaskRepository;
 import lombok.SneakyThrows;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -12,7 +13,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -33,6 +37,7 @@ import static com.ivanlukomskiy.chatsLab.util.JacksonUtils.OBJECT_MAPPER;
 public class GatheringService {
     private static final Logger logger = LogManager.getLogger(GatheringService.class);
     private static final Pattern CHAT_PATTERN = Pattern.compile("\\w{8}\\.json");
+    private static final String MAPPING_FILENAME = "mapping.csv";
 
     @Autowired
     private UserService userService;
@@ -48,6 +53,12 @@ public class GatheringService {
 
     @Autowired
     private TelegramService telegramService;
+
+    @Autowired
+    private TelegramChatsMerger merger;
+
+    @Autowired
+    private MergeTaskRepository mergeTaskRepository;
 
     private ExecutorService executorService;
 
@@ -84,15 +95,40 @@ public class GatheringService {
 
             ZipEntry telegramEntry = zipFile.getEntry(TELEGRAM_FILE_NAME);
             if (telegramEntry == null) {
-                logger.info("No telegram data in pach {} by {}", path, provider);
+                logger.info("No telegram data in path {} by {}", path, provider);
             } else {
                 telegramService.loadChats(zipFile, telegramEntry, metaDto.getDownloadDate(), pack);
+            }
+
+            ZipEntry mappingEntry = zipFile.getEntry(MAPPING_FILENAME);
+            if (mappingEntry == null) {
+                logger.info("No mapping in path {} by {}", path, provider);
+            } else {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(zipFile.getInputStream(mappingEntry)));
+                saveMergeTasks(reader, provider.getId());
             }
 
             executorService.shutdown();
             executorService.awaitTermination(5, TimeUnit.MINUTES);
             logger.info("Loading of messages pack {} finished", path);
         }
+    }
+
+    private void saveMergeTasks(BufferedReader reader, Integer providerId) throws IOException {
+        String line;
+        List<MergeTask> tasks = new ArrayList<>();
+        while ((line = reader.readLine()) != null) {
+            if (!line.contains(";")) continue;
+            String[] split = line.split(";");
+            String telegramName = split[0];
+            Integer vkId = Integer.parseInt(split[1]);
+            MergeTask task = new MergeTask();
+            task.setVkId(vkId);
+            task.setTelegramUsername(telegramName);
+            task.setProviderId(providerId);
+            tasks.add(task);
+        }
+        mergeTaskRepository.save(tasks);
     }
 
     @SneakyThrows
