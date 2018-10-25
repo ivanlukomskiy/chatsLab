@@ -25,7 +25,7 @@ public class UserToWords {
         id = (Integer)obj[0];
         firstName = (String)obj[1];
         lastName = (String)obj[2];
-        gender = Gender.valueOf((String)obj[3]);
+        gender = obj[3] == null ? Gender.UNKNOWN : Gender.valueOf((String)obj[3]);
         words = ((BigInteger)obj[4]).longValue();
         messages = ((BigInteger)obj[5]).longValue();
         density = ((Long)words).doubleValue()/messages;

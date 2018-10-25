@@ -16,7 +16,7 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     @Query("select user from User user where user.id in :ids")
     List<User> findExistUsers(@Param("ids") List<Integer> idsToCheck);
 
-    @Query("select user.id from User user where user.gender is null")
+    @Query("select user.id from User user where user.gender is null and user.id > 0")
     Set<Integer> findUsersWithNotResolvedGender();
 
     @Modifying

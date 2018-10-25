@@ -14,10 +14,8 @@ import java.util.List;
  */
 public interface ChatRepository extends JpaRepository<Chat, Integer> {
 
-    @Query("select c.name, count(c) from Chat c group by c.name")
+    @Query("select c.name, count(c) from Chat c where c.source='VK' group by c.name ")
     List<Object[]> getDuplicateChatNames();
-
-    List<Chat> findByName(String name);
 
     List<Chat> findByNameAndSource(String name, MessageSource source);
 

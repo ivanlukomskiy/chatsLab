@@ -14,6 +14,4 @@ public interface ChatPositionFpRepository extends JpaRepository<ChatPositionFing
     @Modifying
     @Query(value = "update cl_chat_position_fingerprints set suspect = :to where suspect = :from", nativeQuery = true)
     void changeSuspect(@Param("from") Integer from, @Param("to") Integer to);
-
-
 }

@@ -5,7 +5,7 @@ chats-lab:
   # Messages per year to count user as active
   active-threshold-year: 300
   active-threshold-overall: 300
-  participant-ids: 9397429,5804152,1538548,23831182,6313109,72632602,20630922,19707045
+  participant-ids:
 
 spring:
   datasource:

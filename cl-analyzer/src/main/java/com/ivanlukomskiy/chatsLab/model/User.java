@@ -32,6 +32,8 @@ public class User {
     @Column
     private Integer providerId;
 
+    private Integer mergedTo;
+
     public static User of(UserDto userDto, Date updated) {
         User user = new User();
         user.setId(userDto.getId());

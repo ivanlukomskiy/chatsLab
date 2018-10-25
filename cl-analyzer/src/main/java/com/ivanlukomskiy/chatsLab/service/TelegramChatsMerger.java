@@ -43,8 +43,7 @@ public class TelegramChatsMerger {
     private UserRepository userRepository;
 
     @Transactional
-    public Set<Integer> mergeByNames() {
-        Set<Integer> outdatedUsers = new HashSet<>();
+    public void mergeByNames() {
         Set<Integer> outdatedFps = new HashSet<>();
 
         List<NameFingerprint> fps = nameFpRepository.findAll();
@@ -64,9 +63,8 @@ public class TelegramChatsMerger {
                     if (from.getSuspect().getId() == to.getSuspect().getId()) {
                         continue;
                     }
-                    outdatedUsers.add(fpsList.get(i).getSuspect().getId());
                     outdatedFps.add(fpsList.get(i).getId());
-                    merge(fpsList.get(i).getSuspect(), fpsList.get(i + 1).getSuspect());
+                    merge(fpsList.get(i).getSuspect().getId(), fpsList.get(i + 1).getSuspect().getId());
                 }
             }
         });
@@ -74,7 +72,6 @@ public class TelegramChatsMerger {
         List<NameFingerprint> positionFingerprintsToDelete
                 = nameFpRepository.findAll(outdatedFps);
         nameFpRepository.delete(positionFingerprintsToDelete);
-        return outdatedUsers;
     }
 
     @Transactional
@@ -85,8 +82,7 @@ public class TelegramChatsMerger {
     }
 
     @Transactional
-    public Set<Integer> mergeByPositions() {
-        Set<Integer> outdatedUsers = new HashSet<>();
+    public void mergeByPositions() {
         Set<Integer> outdatedFps = new HashSet<>();
 
         List<ChatPositionFingerprint> fps = chatPositionFpRepository.findAll();
@@ -103,13 +99,7 @@ public class TelegramChatsMerger {
                     logger.debug("Suspects {} seem to be identical", names);
                     for (int i = 0; i < indFps.size() - 1; i++) {
                         outdatedFps.add(indFps.get(i).getId());
-                        boolean merged = merge(indFps.get(i).getSuspect(), indFps.get(i + 1).getSuspect());
-                        if (merged) {
-//                            outdatedUsers.add(indFps.get(i).getSuspect().getId());
-                            if(userRepository.exists(indFps.get(i).getId())) {
-                                userRepository.delete(indFps.get(i).getId());
-                            }
-                        }
+                        merge(indFps.get(i).getSuspect().getId(), indFps.get(i + 1).getSuspect().getId());
                     }
                 }
             });
@@ -118,22 +108,43 @@ public class TelegramChatsMerger {
         List<ChatPositionFingerprint> positionFingerprintsToDelete
                 = chatPositionFpRepository.findAll(outdatedFps);
         chatPositionFpRepository.delete(positionFingerprintsToDelete);
-
-        return outdatedUsers;
     }
 
-    private boolean merge(User from, User to) {
-        if (!userRepository.exists(from.getId())) {
-            logger.debug("User {} already deleted", from);
-            return false;
+    private User getUserRecursive(Integer id) {
+        return getUserRecursive(id, new HashSet<>());
+    }
+
+    private User getUserRecursive(Integer id, Set<Integer> visitedIds) {
+        User user = userRepository.getOne(id);
+        if(visitedIds.contains(user.getId())) {
+            throw new RuntimeException("Circular merging, id " + id);
         }
+        if(user.getMergedTo() != null) {
+            visitedIds.add(id);
+            return getUserRecursive(user.getMergedTo(), visitedIds);
+        }
+        return user;
+    }
+
+    private boolean merge(Integer fromId, Integer toId) {
+        User from = getUserRecursive(fromId);
+        User to = getUserRecursive(toId);
+        if(from.getId() > to.getId()) {
+            User tmp = from;
+            from = to;
+            to = tmp;
+        }
+
         if (from.getId() == to.getId()) {
             logger.warn("Merging identical ids {}", from.getId());
             return false;
         }
+
         messageRepository.changeMessagesSender(from.getId(), to.getId());
         chatPositionFpRepository.changeSuspect(from.getId(), to.getId());
         nameFpRepository.changeSuspect(from.getId(), to.getId());
+        from.setMergedTo(to.getId());
+        userRepository.save(from);
         logger.info("Merged {} to {}", from, to);
         return true;
     }
@@ -155,7 +166,7 @@ public class TelegramChatsMerger {
         User from = matches.get(0);
 
         logger.debug("Merging {} to {}", from, to);
-        merge(from, to);
+        merge(from.getId(), to.getId());
 
         return from;
     }

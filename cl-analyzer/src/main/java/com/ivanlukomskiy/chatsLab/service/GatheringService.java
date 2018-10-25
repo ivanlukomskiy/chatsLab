@@ -87,10 +87,10 @@ public class GatheringService {
 
             executorService = Executors.newFixedThreadPool(4);
 
-//            zipFile.stream()
-//                    .filter(entry -> CHAT_PATTERN.matcher(entry.getName()).matches())
-//                    .filter(entry -> !TELEGRAM_FILE_NAME.equals(entry.getName()))
-//                    .forEach(entry -> loadChat(zipFile, entry, metaDto.getDownloadDate(), usersMap, pack));
+            zipFile.stream()
+                    .filter(entry -> CHAT_PATTERN.matcher(entry.getName()).matches())
+                    .filter(entry -> !TELEGRAM_FILE_NAME.equals(entry.getName()))
+                    .forEach(entry -> loadChat(zipFile, entry, metaDto.getDownloadDate(), usersMap, pack));
 
 
             ZipEntry telegramEntry = zipFile.getEntry(TELEGRAM_FILE_NAME);

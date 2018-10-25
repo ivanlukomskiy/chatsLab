@@ -20,9 +20,9 @@ public class TelegramChatsMergeJob implements Job {
     @Override
     public void run() {
         logger.info("Merging by position...");
-        merger.removeOutdatedUsers(merger.mergeByPositions());
+        merger.mergeByPositions();
         logger.info("Merging by name...");
-        merger.removeOutdatedUsers(merger.mergeByNames());
+        merger.mergeByNames();
     }
 
     @Override

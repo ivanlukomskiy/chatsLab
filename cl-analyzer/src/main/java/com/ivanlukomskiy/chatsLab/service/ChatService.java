@@ -1,7 +1,10 @@
 package com.ivanlukomskiy.chatsLab.service;
 
 import com.ivanlukomskiy.chatsLab.model.Chat;
+import com.ivanlukomskiy.chatsLab.model.MessageSource;
+import com.ivanlukomskiy.chatsLab.repository.ChatPositionFpRepository;
 import com.ivanlukomskiy.chatsLab.repository.ChatRepository;
+import lombok.SneakyThrows;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +17,10 @@ import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by ivanl <ilukomskiy@sbdagroup.com> on 09.10.2017.
@@ -33,6 +40,7 @@ public class ChatService {
         chatRepository.save(chat);
     }
 
+    @SneakyThrows
     public void mergeAll() {
         logger.info("Merge session started. Searching for chats with duplicates...");
         List<Object[]> resultSet = chatRepository.getDuplicateChatNames();
@@ -51,16 +59,24 @@ public class ChatService {
         } else {
             logger.info("{} chats with duplicates found", chatNamesWithDuplicates.size());
         }
-        int currentChat = 0;
+
+        ExecutorService executor = Executors.newFixedThreadPool(4);
+
+        AtomicInteger currentChat = new AtomicInteger(0);
         for (String chatName : chatNamesWithDuplicates) {
-            currentChat++;
-            logger.info("Merging chat {}/{} with names {}", currentChat, chatNamesWithDuplicates.size(),
-                    chatName);
-            List<Chat> chatsToMerge = chatRepository.findByName(chatName);
-            for (int i = chatsToMerge.size() - 2; i >= 0; i--) {
-                mergeTwoChats(chatsToMerge.get(i + 1).getId(), chatsToMerge.get(i).getId());
-            }
+            executor.submit(() -> {
+                logger.info("Merging chat {}/{} with names {}", currentChat.incrementAndGet(), chatNamesWithDuplicates.size(),
+                        chatName);
+                List<Chat> chatsToMerge = chatRepository.findByNameAndSource(chatName, MessageSource.VK);
+                for (int i = chatsToMerge.size() - 2; i >= 0; i--) {
+                    mergeTwoChats(chatsToMerge.get(i + 1).getId(), chatsToMerge.get(i).getId());
+                }
+            });
         }
+
+        executor.shutdown();
+        executor.awaitTermination(1, TimeUnit.DAYS);
+
         logger.info("All chats merged");
     }
 

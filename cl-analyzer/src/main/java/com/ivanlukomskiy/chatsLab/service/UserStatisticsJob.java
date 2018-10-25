@@ -1,6 +1,5 @@
 package com.ivanlukomskiy.chatsLab.service;
 
-import com.google.common.collect.Sets;
 import com.ivanlukomskiy.chatsLab.model.Gender;
 import com.ivanlukomskiy.chatsLab.model.User;
 import com.ivanlukomskiy.chatsLab.model.dto.DateToWords;
@@ -9,7 +8,6 @@ import com.ivanlukomskiy.chatsLab.model.json.PointOnTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.SneakyThrows;
-import org.apache.commons.lang.time.DateUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -23,15 +21,12 @@ import java.text.DecimalFormatSymbols;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.google.common.collect.Sets.difference;
 import static com.google.common.collect.Sets.intersection;
 import static com.ivanlukomskiy.chatsLab.service.OverallStatisticsJob.DATE_FORMAT;
 import static com.ivanlukomskiy.chatsLab.service.OverallStatisticsJob.toDate;
 import static java.io.File.separator;
-import static java.util.Calendar.MONTH;
-import static java.util.Calendar.YEAR;
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.reverseOrder;
 
@@ -103,42 +98,44 @@ public class UserStatisticsJob implements Job {
                     + wbu.getLastName()));
         }
 
-        String[] participantIds = participantIdsString.split(",");
-        for (String participantId : participantIds) {
-            Integer id = Integer.valueOf(participantId);
-            List<DateToWords> userActivityByMonths = messagesService.getUserActivityByMonths(id);
-            userActivityByMonths.sort(comparing(DateToWords::getFormattedDate, reverseOrder()));
-            userActivityByMonths = userActivityByMonths.subList(0, 12);
-            userActivityByMonths.sort(Comparator.comparing(DateToWords::getFormattedDate));
-            User user = userService.getById(id);
-            try (ClWriter writer = new ClWriter(new File(exportDir + separator
-                    + PARTICIPANT.replace("%user", user.getFirstName() + "_" + user.getLastName())))) {
-                int count = 0;
-                for (DateToWords dateToWords : userActivityByMonths) {
-                    writer.write(
-                            FORMAT_GENDER_PART.format(Long.valueOf(dateToWords.getWords()).doubleValue() / 1000));
-                    count++;
-                    if (count == 12) break;
+        if (!participantIdsString.isEmpty()) {
+            String[] participantIds = participantIdsString.split(",");
+            for (String participantId : participantIds) {
+                Integer id = Integer.valueOf(participantId);
+                List<DateToWords> userActivityByMonths = messagesService.getUserActivityByMonths(id);
+                userActivityByMonths.sort(comparing(DateToWords::getFormattedDate, reverseOrder()));
+                userActivityByMonths = userActivityByMonths.subList(0, 12);
+                userActivityByMonths.sort(Comparator.comparing(DateToWords::getFormattedDate));
+                User user = userService.getById(id);
+                try (ClWriter writer = new ClWriter(new File(exportDir + separator
+                        + PARTICIPANT.replace("%user", user.getFirstName() + "_" + user.getLastName())))) {
+                    int count = 0;
+                    for (DateToWords dateToWords : userActivityByMonths) {
+                        writer.write(
+                                FORMAT_GENDER_PART.format(Long.valueOf(dateToWords.getWords()).doubleValue() / 1000));
+                        count++;
+                        if (count == 12) break;
+                    }
                 }
             }
-        }
 
 
-        for (String participantId : participantIds) {
-            List<PointOnTime> points = new ArrayList<>();
-            Integer id = Integer.valueOf(participantId);
-            List<DateToWords> userActivityByMonths = messagesService.getUserActivityByMonths(id);
-            userActivityByMonths.sort(Comparator.comparing(DateToWords::getFormattedDate));
-            User user = userService.getById(id);
-            for (DateToWords dateToWords : userActivityByMonths) {
-                points.add(new PointOnTime(toDate(dateToWords.getFormattedDate()), dateToWords.getWords()));
+            for (String participantId : participantIds) {
+                List<PointOnTime> points = new ArrayList<>();
+                Integer id = Integer.valueOf(participantId);
+                List<DateToWords> userActivityByMonths = messagesService.getUserActivityByMonths(id);
+                userActivityByMonths.sort(Comparator.comparing(DateToWords::getFormattedDate));
+                User user = userService.getById(id);
+                for (DateToWords dateToWords : userActivityByMonths) {
+                    points.add(new PointOnTime(toDate(dateToWords.getFormattedDate()), dateToWords.getWords()));
+                }
+
+                File participantsJson = new File(exportDir + separator + PARTICIPANT_JSON.replace("%user", user.getLastName()));
+
+                ObjectMapper objectMapper = new ObjectMapper();
+                objectMapper.setDateFormat(DATE_FORMAT);
+                objectMapper.writeValue(participantsJson, points);
             }
-
-            File participantsJson = new File(exportDir + separator + PARTICIPANT_JSON.replace("%user", user.getLastName()));
-
-            ObjectMapper objectMapper = new ObjectMapper();
-            objectMapper.setDateFormat(DATE_FORMAT);
-            objectMapper.writeValue(participantsJson, points);
         }
 
         double yearPredictionMultiplier = overallStatisticsJob.getYearPredictionMultiplier();
@@ -248,7 +245,7 @@ public class UserStatisticsJob implements Job {
                 int stayedActive = intersection(lastYearActiveUserIds, thisYearActiveUserIds).size();
                 int newUsers = difference(thisYearActiveUserIds, lastYearActiveUserIds).size();
                 int leavesActive = difference(lastYearActiveUserIds, thisYearActiveUserIds).size();
-                writerUsersBalance.write(year, stayedActive, newUsers, leavesActive);
+                writerUsersBalance.write(year, stayedActive, newUsers, leavesActive, (stayedActive+newUsers));
                 lastYearActiveUserIds = thisYearActiveUserIds;
 
                 // Write top active users by years

@@ -32,12 +32,9 @@ public class MergeByMappingJob implements Job {
     @SneakyThrows
     public void run() {
         List<MergeTask> tasks = mergeTaskRepository.findAll();
-        List<User> outdatedUsers = new ArrayList<>();
         for (MergeTask task : tasks) {
-            User outdatedUser = merger.mergeByMapping(task.getVkId(), task.getTelegramUsername(), task.getProviderId());
-            outdatedUsers.add(outdatedUser);
+            merger.mergeByMapping(task.getVkId(), task.getTelegramUsername(), task.getProviderId());
         }
-        userRepository.delete(outdatedUsers);
         mergeTaskRepository.deleteAll();
     }
 
