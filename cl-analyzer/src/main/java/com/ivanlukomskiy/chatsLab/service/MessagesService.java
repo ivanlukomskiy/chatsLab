@@ -1,16 +1,22 @@
 package com.ivanlukomskiy.chatsLab.service;
 
+import com.ivanlukomskiy.chatsLab.model.Chat;
 import com.ivanlukomskiy.chatsLab.model.Message;
+import com.ivanlukomskiy.chatsLab.model.MessageSource;
 import com.ivanlukomskiy.chatsLab.model.User;
 import com.ivanlukomskiy.chatsLab.model.dto.ChatNameToWords;
 import com.ivanlukomskiy.chatsLab.model.dto.DateToWords;
 import com.ivanlukomskiy.chatsLab.model.dto.UserToWords;
+import com.ivanlukomskiy.chatsLab.repository.ChatRepository;
 import com.ivanlukomskiy.chatsLab.repository.MessageRepository;
 import org.apache.commons.lang.time.DateUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigInteger;
 import java.util.*;
@@ -23,9 +29,13 @@ import static java.util.stream.Collectors.toList;
  */
 @Service
 public class MessagesService {
+    private static final Logger logger = LogManager.getLogger(MessagesService.class);
 
     @Autowired
     private MessageRepository messageRepository;
+
+    @Autowired
+    private ChatRepository chatRepository;
 
     public void loadMessages(List<Message> messages) {
         messageRepository.save(messages);
@@ -75,10 +85,44 @@ public class MessagesService {
                 .stream().map(DateToWords::new).collect(toList());
     }
 
+    @Transactional(readOnly = true)
+    public List<List<DateToWords>> getWordsByDays(String chatName) {
+        List<Chat> chats = chatRepository.findByName(chatName);
+        if (chats.isEmpty()) return Collections.emptyList();
+        List<List<DateToWords>> result = new ArrayList<>();
+        for (Chat chat : chats) {
+            result.add(messageRepository.getWordsByDays(chat.getId())
+                    .stream().map(DateToWords::new).collect(toList()));
+        }
+        return result;
+    }
+
+    @Transactional(readOnly = true)
+    public List<List<DateToWords>> getMessagesByDays(String chatName) {
+        List<Chat> chats = chatRepository.findByName(chatName);
+        if (chats.isEmpty()) return Collections.emptyList();
+        List<List<DateToWords>> result = new ArrayList<>();
+        for (Chat chat : chats) {
+            result.add(messageRepository.getMessagesByDays(chat.getId())
+                    .stream().map(DateToWords::new).collect(toList()));
+        }
+        return result;
+    }
+
     public List<DateToWords> getWordsByMonths() {
         return messageRepository.getWordsByMonths().stream()
                 .map(DateToWords::new)
                 .collect(toList());
+    }
+
+    public List<DateToWords> getWordsByMonths(MessageSource source) {
+        return messageRepository.getWordsByMonths(source.toString()).stream()
+                .map(DateToWords::new)
+                .collect(toList());
+    }
+
+    public Date getFirstMessageDate(Integer userId) {
+        return messageRepository.getFirstMessageDate(userId);
     }
 
     public Page<Message> getByPage(int page) {
@@ -99,6 +143,32 @@ public class MessagesService {
 
     public List<ChatNameToWords> getWordsByChats() {
         return messageRepository.getWordsByChats().stream().map(ChatNameToWords::new).collect(toList());
+    }
+
+    public double getWordsDensityThisYear(Integer userId) {
+        Calendar cal = new GregorianCalendar();
+        cal.set(Calendar.DAY_OF_MONTH, 1);
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MONTH, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        Date time = cal.getTime();
+        Long wordsCount = messageRepository.getWordsCount(userId, time);
+        Long messagesCount = messageRepository.getMessagesCount(userId, time);
+        if(wordsCount == null) {
+            logger.error("Words null {}", userId);
+            return 0.;
+        }
+        if(messagesCount == null) {
+            logger.error("Messages null {}", userId);
+            return 0.;
+        }
+        if(messagesCount == 0) {
+            logger.error("Messages zero {}", userId);
+            return 0.;
+        }
+        return wordsCount.doubleValue() / messagesCount.doubleValue();
     }
 
     public List<ChatNameToWords> getWordsByChatLastYear() {
@@ -140,7 +210,7 @@ public class MessagesService {
 
         Map<Integer, List<UserToWords>> result = new HashMap<>();
 
-        while(pointer.getTime().before(last)) {
+        while (pointer.getTime().before(last)) {
             Date left = pointer.getTime();
             Integer year = pointer.get(Calendar.YEAR);
             pointer.add(Calendar.YEAR, 1);

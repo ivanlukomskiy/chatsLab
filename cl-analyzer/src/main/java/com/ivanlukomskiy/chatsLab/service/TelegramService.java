@@ -151,6 +151,7 @@ public class TelegramService {
             message.setTelegramId(telegramId);
             messages.add(message);
             chat.setMessagesCount(chat.getMessagesCount() + 1);
+            chat.setWordsNumber(chat.getWordsNumber() + message.getWordsNumber());
         }
 
         logger.debug("Saving {} messages, {} pos fp, {} name fp",

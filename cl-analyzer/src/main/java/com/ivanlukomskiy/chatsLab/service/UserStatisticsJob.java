@@ -51,6 +51,8 @@ public class UserStatisticsJob implements Job {
     private static final String NEW_USERS_RATING = "newUsersRating.csv";
     private static final String PARTICIPANT = "participant%user.csv";
     private static final String PARTICIPANT_JSON = "participant%user.json";
+    private static final String ACTIVE_USERS_STANDING = "standing.csv";
+    private static final String WORDS_DENSITY_THIS_YEAR = "words_density_this_year.csv";
 
     @Value("${chats-lab.active-threshold-year}")
     private int activeThresholdYear = 300;
@@ -82,6 +84,8 @@ public class UserStatisticsJob implements Job {
         File activeUsersBalanceByYearsFile = new File(exportDir + separator + ACTIVE_USERS_BALANCE_BY_YEARS);
         File topActiveUsersByYears = new File(exportDir + separator + TOP_ACTIVE_USERS_BY_YEARS);
         File newUsersRatingFile = new File(exportDir + separator + NEW_USERS_RATING);
+        File activeUsersStandingFile = new File(exportDir + separator + ACTIVE_USERS_STANDING);
+        File wordsDensityThisYear = new File(exportDir + separator + WORDS_DENSITY_THIS_YEAR);
 
 
         logger.info("Writing words by users...");
@@ -204,6 +208,7 @@ public class UserStatisticsJob implements Job {
                         newUsersDetail.current);
             }
 
+            Set<Integer> currentYearActiveUsersIds = new HashSet<>();
 
             for (Map.Entry<Integer, List<UserToWords>> yearAndUsers : yearToUserPair) {
                 Integer year = yearAndUsers.getKey();
@@ -223,6 +228,10 @@ public class UserStatisticsJob implements Job {
                     activeUsers.add(userToWords);
                     thisYearActiveUserIds.add(userToWords.getId());
                     userCount++;
+                }
+
+                if (Objects.equals(yearAndUsers.getKey(), currentYear)) {
+                    currentYearActiveUsersIds.addAll(thisYearActiveUserIds);
                 }
 
                 // Write gender statistics
@@ -245,7 +254,7 @@ public class UserStatisticsJob implements Job {
                 int stayedActive = intersection(lastYearActiveUserIds, thisYearActiveUserIds).size();
                 int newUsers = difference(thisYearActiveUserIds, lastYearActiveUserIds).size();
                 int leavesActive = difference(lastYearActiveUserIds, thisYearActiveUserIds).size();
-                writerUsersBalance.write(year, stayedActive, newUsers, leavesActive, (stayedActive+newUsers));
+                writerUsersBalance.write(year, stayedActive, newUsers, leavesActive, (stayedActive + newUsers));
                 lastYearActiveUserIds = thisYearActiveUserIds;
 
                 // Write top active users by years
@@ -266,7 +275,40 @@ public class UserStatisticsJob implements Job {
                 // Write active users by year
                 writerActive.write(year, total);
             }
+
+            logger.info("Writing active users analysis");
+            try (ClWriter writer = new ClWriter(activeUsersStandingFile)) {
+                Map<Integer, Long> yearToUsersNumber = currentYearActiveUsersIds.stream()
+                        .map(messagesService::getFirstMessageDate)
+                        .map(date -> {
+                            Calendar cal = Calendar.getInstance();
+                            cal.setTime(date);
+                            return cal.get(Calendar.YEAR);
+                        }).collect(Collectors.groupingBy(i -> i, Collectors.counting()));
+                yearToUsersNumber.forEach((year, user) -> {
+                    writer.write(year, user);
+                });
+            }
+
+            logger.info("Writing words density this year");
+            try (ClWriter writer = new ClWriter(wordsDensityThisYear)) {
+                List<UserToDensity> usersAndDensities = new ArrayList<>();
+                for (Integer userId : currentYearActiveUsersIds) {
+                    User user = userService.getById(userId);
+                    double density = messagesService.getWordsDensityThisYear(userId);
+                    usersAndDensities.add(new UserToDensity(user, density));
+                }
+                usersAndDensities.sort(Comparator.comparing(UserToDensity::getDensity));
+                usersAndDensities.forEach(uad -> writer.write(uad.getUser().toString(), uad.getDensity()));
+            }
         }
+    }
+
+    @Data
+    @AllArgsConstructor
+    class UserToDensity {
+        User user;
+        double density;
     }
 
     @Data

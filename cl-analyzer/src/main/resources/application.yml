@@ -6,6 +6,7 @@ chats-lab:
   active-threshold-year: 300
   active-threshold-overall: 300
   participant-ids:
+  chats-activity-by-days: AEGEE Talks
 
 spring:
   datasource:

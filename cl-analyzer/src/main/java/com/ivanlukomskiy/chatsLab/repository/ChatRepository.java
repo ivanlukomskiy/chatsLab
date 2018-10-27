@@ -19,6 +19,8 @@ public interface ChatRepository extends JpaRepository<Chat, Integer> {
 
     List<Chat> findByNameAndSource(String name, MessageSource source);
 
+    List<Chat> findByName(String name);
+
     @Modifying
     @Query(value = "UPDATE cl_messages " +
             "SET chat_id = :target_id " +
