@@ -125,6 +125,10 @@ public class MessagesService {
         return messageRepository.getFirstMessageDate(userId);
     }
 
+    public Date getLastMessageDate(Integer chatId) {
+        return messageRepository.getLastChatMessageDate(chatId);
+    }
+
     public Page<Message> getByPage(int page) {
         PageRequest pageRequest = new PageRequest(page, 50000);
         return messageRepository.findAll(pageRequest);

@@ -80,7 +80,7 @@ public class ChatService {
         logger.info("All chats merged");
     }
 
-    private void mergeTwoChats(int sourceId, int targetId) {
+    public void mergeTwoChats(int sourceId, int targetId) {
         logger.debug("Start merging chat {} to chat {}", sourceId, targetId);
         transactionTemplate.execute(new TransactionCallbackWithoutResult() {
             @Override

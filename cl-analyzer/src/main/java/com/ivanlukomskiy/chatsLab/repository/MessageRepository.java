@@ -76,6 +76,9 @@ public interface MessageRepository extends JpaRepository<Message, Integer> {
     @Query("select min(m.time) from Message m where m.sender.id = :userId")
     Date getFirstMessageDate(@Param("userId") Integer userId);
 
+    @Query("select max(m.time) from Message m where m.chat.id = :chatId")
+    Date getLastChatMessageDate(@Param("chatId") Integer chatId);
+
     @Query("select count(m) from Message m where m.sender.id = :userId and m.time > :since")
     Long getMessagesCount(@Param("userId") Integer userId, @Param("since") Date since);
 
